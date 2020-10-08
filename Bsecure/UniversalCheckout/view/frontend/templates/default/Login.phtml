@@ -1,0 +1,23 @@
+<?php
+
+	$helper = $this->helper('Bsecure\UniversalCheckout\Helper\Data');	
+	$module_enabled = $helper->getConfig('universalcheckout/general/enable');
+	$bsecure_button_show_on_login = $helper->getConfig('universalcheckout/general/bsecure_button_show_on_login');
+	
+	if($bsecure_button_show_on_login && $module_enabled):
+
+		?>
+		
+	    <a href="<?php echo $this->getUrl('bsecure/index/bsecurelogin'); ?>" class="bsecure-login-button"><img data-role="bsecure-login"
+	            title="<?php echo  __("Login with bSecure"); ?>"
+	            alt="<?php  echo  __("Login with bSecure"); ?>"	           
+	            class=""
+	            src="<?php echo $this->getViewFileUrl('Bsecure_UniversalCheckout::images/login-with-bsecure.jpg'); ?>"
+	             /></a>
+
+	<?php endif; ?>
+
+
+  <h1tag><?php //echo $block->getTitle(); ?></h1tag>
+
+

@@ -1,0 +1,47 @@
+<?php 
+if ($block->isPossibleOnepageCheckout()): 
+
+	$helper = $this->helper('Bsecure\UniversalCheckout\Helper\Data');
+	$title = $helper->getConfig('universalcheckout/general/bsecure_title');
+	$module_enabled = $helper->getConfig('universalcheckout/general/enable');
+	if($module_enabled):
+
+		?>
+
+		
+	    <a href="javascript:;" class="bsecure-checkout-button"><img    data-role="proceed-to-checkout"
+	            title="<?php /* @escapeNotVerified */ echo  __($title); ?>"
+	            alt="<?php  echo  __($title); ?>"
+	            <?php /*?>
+	            data-mage-init='{"Magento_Checkout/js/proceed-to-checkout":{"checkoutUrl":"<?php //echo $block->getCheckoutUrl() ?>"}}' */ ?>
+	            class="primary checkout"
+	            src="<?php echo $this->getViewFileUrl('Bsecure_UniversalCheckout::images/pay-with-bsecure-black.svg'); ?>"
+	             /></a>
+
+	<?php else : ?>
+
+		<button type="button"
+	            data-role="proceed-to-checkout"
+	            title="<?= $block->escapeHtmlAttr(__('Proceed to Checkout')) ?>"
+	            data-mage-init='{
+	                "Magento_Checkout/js/proceed-to-checkout":{
+	                    "checkoutUrl":"<?= $block->escapeJs($block->escapeUrl($block->getCheckoutUrl())) ?>"
+	                }
+	            }'
+	            class="action primary checkout<?= ($block->isDisabled()) ? ' disabled' : '' ?>"
+	            <?php if ($block->isDisabled()) :?>
+	                disabled="disabled"
+	            <?php endif; ?>>
+	        <span><?= $block->escapeHtml(__('Proceed to Checkout')) ?></span>
+	    </button>
+
+	<?php endif; 
+endif;?>
+
+<?php //echo $block->getTest(); // Code is added to test if our block is working or not ?>
+
+<script type="text/javascript">
+	var baseUrl = '<?php echo $this->getUrl('');?>';
+    require(['bsecureFront'], function () {});
+
+</script>
