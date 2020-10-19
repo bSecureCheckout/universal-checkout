@@ -3,7 +3,7 @@
     <event name="controller_action_predispatch_checkout_index_index">
         <observer name="handle_minicheckout_page" instance="Bsecure\UniversalCheckout\Observer\HandleCheckoutPage" />
     </event>
-    <event name="controller_action_predispatch_checkout_onepage_success">
+    <event name="sales_quote_remove_item">
         <observer name="handle_mini_cart" instance="Bsecure\UniversalCheckout\Observer\HandleMiniCart" />
     </event>
     <event name="customer_logout">

@@ -17,10 +17,15 @@ class HandleMiniCart implements \Magento\Framework\Event\ObserverInterface
 
 	public function execute(\Magento\Framework\Event\Observer $observer)
 	{
+
 		
 		$module_enabled = $this->bsecureHelper->getConfig('universalcheckout/general/enable');
 
+		
+
 		if($module_enabled && $this->cartHelper->getItemsCount() === 0){
+
+			var_dump('expression','deleted all');
 			// clear mini cart //
 			/*echo "<script type='text/javascript'>
 				window.addEventListener( 'load', function( event ) {

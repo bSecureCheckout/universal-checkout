@@ -1,6 +1,7 @@
 <?xml version="1.0" ?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-	<preference for="Bsecure\UniversalCheckout\Api\PostManagementInterface" type="Bsecure\UniversalCheckout\Model\PostManagement"/>
+	<preference for="Bsecure\UniversalCheckout\Api\PostManagementInterface" type="Bsecure\UniversalCheckout\Model\PostManagement"/>	
+	
 	<type name="Bsecure\UniversalCheckout\Model\Carrier\Shipping">
       	<plugin name="disable-Shipping" type="Bsecure\UniversalCheckout\Model\Carrier\Shipping" sortOrder="1" />  
 
@@ -8,4 +9,5 @@
     <type name="Magento\Quote\Api\ShipmentEstimationInterface">
         <plugin name="hide_show_shipping_methods" type="Bsecure\UniversalCheckout\Plugin\Quote\Api\ShipmentEstimationPlugin"/>
     </type>
+
 </config>
