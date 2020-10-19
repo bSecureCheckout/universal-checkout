@@ -22,12 +22,12 @@ class HandleCheckoutPage implements \Magento\Framework\Event\ObserverInterface
 
 
 	public function execute(\Magento\Framework\Event\Observer $observer)
-	{
-		
+	{		
 		
 		$module_enabled = $this->bsecureHelper->getConfig('universalcheckout/general/enable');
+		$show_checkout_btn = $this->bsecureHelper->getConfig('universalcheckout/general/show_checkout_btn');
 
-		if($module_enabled && $this->cartHelper->getItemsCount() > 0){
+		if($module_enabled && $this->cartHelper->getItemsCount() > 0 && $show_checkout_btn != $this->bsecureHelper::BTN_SHOW_BSECURE_BOTH){
 
 			$this->handle_checkout_page();
 

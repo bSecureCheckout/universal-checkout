@@ -133,8 +133,8 @@ class Checkout extends \Magento\Framework\App\Action\Action
 
 						if($order->getStatus() == \Magento\Sales\Model\Order::STATE_CANCELED){
 
-							//$this->messageManager->addError(__("Unable to create order at this moment please try again."));
-							$this->_redirect($this->urlInterface->getUrl());
+							$this->messageManager->addError(__("Sorry! Your order has been ".$order->getStatus()));
+							$this->_redirect('checkout/onepage/failure');
 
 						}
 				    	

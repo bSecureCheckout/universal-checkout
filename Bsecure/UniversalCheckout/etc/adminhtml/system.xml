@@ -12,16 +12,20 @@
             <group id="general" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
                 <label>General Configuration</label>
                 <field id="enable" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="0">
-                    <label>Module Enable</label>
+                    <label>Enable bSecure checkout</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
                 <field id="bsecure_button_show_on_login" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Show bSecure signup button at Login Form</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
+                <field id="show_checkout_btn" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="0">
+                   <label>bSecure checkout button display type</label>        
+                   <source_model>Bsecure\UniversalCheckout\Model\Config\Source\ListMode</source_model>
+                </field>
                 <field id="bsecure_base_url" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>bSecure Base URL</label>
-                    <comment>You can find this base url from bSecure portal.</comment>
+                    <comment></comment>
                 </field>
                 <field id="bsecure_title" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Title</label>

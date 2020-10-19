@@ -7,6 +7,8 @@ use Magento\Framework\HTTP\Client\Curl;
 
 class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
+    const BTN_SHOW_BSECURE_ONLY = 'bsecure_only';
+    const BTN_SHOW_BSECURE_BOTH = 'bsecure_mag_both';
 	public $base_url = "";
 
 	public function __construct(
