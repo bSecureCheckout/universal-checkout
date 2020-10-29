@@ -1,0 +1,11 @@
+<?php 
+
+$_order = $block->getOrder();
+
+$payment = $_order->getPayment();
+$additionalData = $payment->getAdditionalInformation();
+	
+if(!empty($additionalData['_bsecure_order_id'])){
+	echo '<h2>bSecure Order ID: '.$additionalData['_bsecure_order_id'].'</h2>';
+}
+?>

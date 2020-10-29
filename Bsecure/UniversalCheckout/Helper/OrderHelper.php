@@ -92,8 +92,6 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
     */
     public function createMagentoOrder($orderData) {       
 
-        //echo json_encode($orderData); die;
-
         $bsecure_order_ref  = $orderData->order_ref;
         $placement_status   = $orderData->placement_status;
         $payment_status     = $orderData->payment_status;
@@ -104,9 +102,24 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $shipment_method    = $orderData->shipment_method;
         $order_type         = $orderData->order_type;
         $merchant_order_id  = $orderData->merchant_order_id;
-        
 
-
+        $full_name      = "";
+        $first_name     = "";
+        $last_name      = "";
+        $email          = "";
+        $address_1      = "";
+        $address_2      = "";
+        $phone          = "";
+        $gender         = "";
+        $city           = "";
+        $dob            = "";
+        $postcode       = "67000";
+        $country        = "";
+        $country_code   = "";
+        $state          = "";
+        $lat            = "";
+        $long           = "";
+        $customer_id    = null;
 
         $orderExists = $this->getMagentoOrderByBsecureRefId($bsecure_order_ref);
        
@@ -125,77 +138,83 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $storeId    = $storeId > 0 ? $storeId : 1;
         $store      = $this->storeManager->getStore($storeId);
         $websiteId  = $this->storeManager->getStore($storeId)->getWebsiteId();
-        $customer   = $this->customerFactory->create();
-        $customer->setWebsiteId($websiteId);
-        $customer->loadByEmail($customer_details->email);// load customet by email address
-
-        $first_name     = "";
-        $last_name      = "";
-        $email          = "";
-        $address_1      = "";
-        $address_2      = "";
-        $phone          = "";
-        $gender         = "";
-        $city           = "";
-        $dob            = "";
-        $postcode       = "67000";
-        $country        = "";
-        $country_code   = "";
-        $state          = "";
-        $lat            = "";
-        $long           = "";
-
-        if(!empty($customer_details->name)){
-
-            $first_name     = $this->get_first_name_or_last_name($customer_details->name);
-            $last_name      = $this->get_first_name_or_last_name($customer_details->name,'last_name');
-        }
-
-        if(!empty($customer_details->phone_number)){
-            $phone          = $customer_details->phone_number;
-        }
-        if(!empty($customer_details->country_code)){
-            $country_code   = $customer_details->country_code;
-        }
-        if(!empty($customer_details->gender)){
-            $gender         = $customer_details->gender;
-        }
-        if(!empty($customer_details->dob)){
-            $dob            = $customer_details->dob;
-        }
-        
-
-        
-        if(!$customer->getEntityId()){
-
-            //If not avilable then create this customer 
-            $customer->setWebsiteId($websiteId)
-                    ->setStore($store)
-                    ->setFirstname($first_name)
-                    ->setLastname($last_name)
-                    ->setEmail($customer_details->email) 
-                    ->setPassword($customer_details->email);
-            $customer->save();
-
-
-            $customerData = $customer->getDataModel();
-            $customerData->setCustomAttribute('country_code',$country_code);
-            $customer->updateData($customerData);
-            $customer->save();
-            
-        }
-
 
 
         $quote = $this->quote->create(); //Create object of quote
         $quote->setStore($store); //set store for which you create quote
-        // if you have allready buyer id then you can load customer directly 
-        $customer = $this->customerRepository->getById($customer->getEntityId());
+        $quote->setCurrency();
 
-        //$quote->setCurrency('PKR');
-        $quote->setBaseCurrencyCode('PKR');
-        $quote->setQuoteCurrencyCode('PKR');
-        $quote->assignCustomer($customer); //Assign quote to customer
+        if(!empty($customer_details->email) && !empty($customer_details->name)){
+
+            $customer   = $this->customerFactory->create();
+            $customer->setWebsiteId($websiteId);
+            $customer->loadByEmail($customer_details->email);// load customet by email address           
+
+            $full_name      = $customer_details->name;
+            $first_name     = $this->get_first_name_or_last_name($customer_details->name);
+            $last_name      = $this->get_first_name_or_last_name($customer_details->name,'last_name');
+            
+
+            if(!empty($customer_details->phone_number)){
+                $phone          = $customer_details->phone_number;
+            }
+            if(!empty($customer_details->country_code)){
+                $country_code   = $customer_details->country_code;
+            }
+            if(!empty($customer_details->gender)){
+                $gender         = $customer_details->gender;
+            }
+            if(!empty($customer_details->dob)){
+                $dob            = $customer_details->dob;
+            }
+
+
+            if(!$customer->getEntityId()){
+
+                // Check if its not a Guest Customer
+                if(!empty($customer_details->email) && !empty($first_name)){
+
+                    //If not avilable then create this customer 
+                    $customer->setWebsiteId($websiteId)
+                            ->setStore($store)
+                            ->setFirstname($first_name)
+                            ->setLastname($last_name)
+                            ->setEmail($customer_details->email) 
+                            ->setPassword($customer_details->email);
+                    $customer->save();
+
+                    $customerData = $customer->getDataModel();
+                    $customerData->setCustomAttribute('country_code',$country_code);
+                    $customer->updateData($customerData);
+                    $customer->save();
+
+                    $customer_id = $customer->getEntityId();
+
+                    // if you have allready buyer id then you can load customer directly 
+                    $customer = $this->customerRepository->getById($customer_id);
+
+                    
+                }            
+                
+            }else{
+
+                $customer = $this->customerRepository->getById($customer->getEntityId());
+
+            }
+                        
+            $quote->assignCustomer($customer); //Assign quote to customer
+
+        }else{
+
+            // Set Customer Data on Qoute, Do not create customer.
+            $quote->setCustomerFirstname("Guest First Name");
+            $quote->setCustomerLastname("Guest Last Name");
+            $quote->setCustomerEmail("guest@example.com");
+            $quote->setCustomerIsGuest(true);
+
+        }        
+
+        
         $quoteItem = $this->cartItemFactory->create();
 
         //add items in quote
@@ -214,6 +233,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
 
             if(!empty($delivery_address->name)){
 
+                $full_name     = empty($full_name) ? $this->get_first_name_or_last_name($delivery_address->name) : $full_name;
                 $first_name     = empty($first_name) ? $this->get_first_name_or_last_name($delivery_address->name) : $first_name;
                 $last_name      =  empty($first_name) ? $this->get_first_name_or_last_name($delivery_address->name, 'last_name') : $last_name;
                 
@@ -233,8 +253,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         // return Pakistan to PK or United Kingdom to UK//
         $country_id = array_search($country, \Zend_Locale::getTranslationList('territory'));
 
-
-        $addresses = $customer->getAddresses();
+        $addresses = isset($customer) ? $customer->getAddresses() : [];
 
         $saveInAddressBook = 1;
 
@@ -243,20 +262,19 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
             foreach ($addresses as $key => $value) {       
 
                 // Check if Address already exists
-                if($value->getFirstname() == $this->get_first_name_or_last_name($customer_details->name) && $value->getLastname() == $this->get_first_name_or_last_name($customer_details->name, 'last_name') &&  $value->getTelephone() == $this->bsecureHelper->phoneWithCountryCode($phone, $country_code) && $value->getCity() == $city && $value->getCountryId() == $country_id && implode(" ",$value->getStreet()) == $address_1 .' '. $address_2){
+                if($value->getFirstname() == $this->get_first_name_or_last_name( $full_name) && $value->getLastname() ==  $this->get_first_name_or_last_name( $full_name, 'last_name') &&  $value->getTelephone() == $this->bsecureHelper->phoneWithCountryCode($phone, $country_code) && $value->getCity() == $city && $value->getCountryId() == $country_id && implode(" ",$value->getStreet()) == $address_1 .' '. $address_2){
                      
                     $saveInAddressBook = 0;
                     continue;
                 }
-            }
-                                                
+            }                                                
 
         }
        
 
         $shipping_address = array(
-                            'firstname' => $this->get_first_name_or_last_name($customer_details->name), //address Details
-                            'lastname'  => $this->get_first_name_or_last_name($customer_details->name, 'last_name'),
+                            'firstname' => $this->get_first_name_or_last_name( $full_name), //address Details
+                            'lastname'  => $this->get_first_name_or_last_name( $full_name, 'last_name'),
                             'street'    => $address_1 .' '. $address_2,
                             'city'      => $city,
                             'country_id'=> $country_id,
@@ -270,14 +288,18 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                             'lat'       => $lat,
                             'long'      => $long,
                             'save_in_address_book' => $saveInAddressBook,
-                            //'default_shipping' => 1,
-                            //'default_billing' => 1,
+                            
                         );    
 
 
         //Set Address to quote
-        $quote->getBillingAddress()->addData($shipping_address);
-        $quote->getShippingAddress()->addData($shipping_address);
+
+        //if(!empty($customer_id)){
+
+            $quote->getBillingAddress()->addData($shipping_address);
+            $quote->getShippingAddress()->addData($shipping_address);
+        //}
+        
         $shippingPrice = 0;
         $shippingMethod = 'freeshipping_freeshipping';
         $shippingpTitle = '';
@@ -344,12 +366,9 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         
-        $order->save();
+        $order->save();        
 
-        //$order = $this->cartManagementInterface->placeOrder($quote->getId());
-
-        $orderState = $this->magentoOrderStatus($placement_status);
-        
+        $orderState = $this->magentoOrderStatus($placement_status);        
        
         $order->setState($orderState);
         $order->setStatus($orderState);
@@ -430,7 +449,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
 
         if (empty($orderData->customer) ){
 
-            return  ['status' => true, 'msg' => __("No customer returned from bSecure server. Please resubmit your order.")];
+            //return  ['status' => true, 'msg' => __("No customer returned from bSecure server. Please resubmit your order.")];
         }
 
 
@@ -493,13 +512,10 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
 
         switch ($placement_status) {
             case 1:
-            case 2:             
+            case 2:    
+            case 3:         
                 $order_status = \Magento\Sales\Model\Order::STATE_PROCESSING;
-                break;
-            case 3:
-                //$order_status = \Magento\Sales\Model\Order::STATE_COMPLETE; //Temporary not using
-                $order_status = \Magento\Sales\Model\Order::STATE_PROCESSING;
-                break;
+                break;           
             case 4:
                 $order_status = \Magento\Sales\Model\Order::STATE_HOLDED;
                 break;
@@ -675,7 +691,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                                                     'price' => floatval($regularPrice),
                                                     'discount' => 0,
                                                     'sale_price' => $specialPrice,
-                                                    'sub_total' => 0,
+                                                    'sub_total' => $specialPrice * $qty,
                                                     'image' => $imageUrl,
                                                     'short_description' => $objectManager->create('Magento\Framework\Escaper')->escapeHtml($product->getShortDescription()),
                                                     'description' => $objectManager->create('Magento\Framework\Escaper')->escapeHtml($product->getDescription()),  
@@ -754,9 +770,11 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
     public function bsecureCreateOrder($accessToken){
 
         if(!$accessToken){
-            error_log("Access token not found while sending request at bSecure server");
-            die(__("Access token not found while sending request at bSecure server"));
-            
+
+            throw new \Magento\Framework\Exception\AlreadyExistsException(
+                __("Access token not found while sending request at bSecure server")
+            );               
+           
         }
 
         $cart_data = $this->get_cart_data();
@@ -785,12 +803,6 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                         'headers' => $headers,                  
 
                     ];      
-
-        //echo json_encode($request_data);
-
-        //echo '<br><br><br>accessToken:'. $accessToken;  
-
-        //echo '<br><br>'.$order_url; die;    
                 
         $response = $this->bsecureHelper->bsecureSendCurlRequest($order_url,$params);       
     
