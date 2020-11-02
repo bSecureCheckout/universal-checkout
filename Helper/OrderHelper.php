@@ -512,13 +512,10 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
 
         switch ($placement_status) {
             case 1:
-            case 2:             
+            case 2:    
+            case 3:         
                 $order_status = \Magento\Sales\Model\Order::STATE_PROCESSING;
-                break;
-            case 3:
-                //$order_status = \Magento\Sales\Model\Order::STATE_COMPLETE; //Temporary not using
-                $order_status = \Magento\Sales\Model\Order::STATE_PROCESSING;
-                break;
+                break;           
             case 4:
                 $order_status = \Magento\Sales\Model\Order::STATE_HOLDED;
                 break;
@@ -694,7 +691,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                                                     'price' => floatval($regularPrice),
                                                     'discount' => 0,
                                                     'sale_price' => $specialPrice,
-                                                    'sub_total' => 0,
+                                                    'sub_total' => $specialPrice * $qty,
                                                     'image' => $imageUrl,
                                                     'short_description' => $objectManager->create('Magento\Framework\Escaper')->escapeHtml($product->getShortDescription()),
                                                     'description' => $objectManager->create('Magento\Framework\Escaper')->escapeHtml($product->getDescription()),  
