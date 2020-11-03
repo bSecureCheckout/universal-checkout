@@ -3,7 +3,7 @@
     <default>
         <universalcheckout>
             <general>
-                <enable>0</enable>
+                <enable>1</enable>
                 <bsecure_button_show_on_login>0</bsecure_button_show_on_login>
                 <bsecure_base_url>https://api-dev.bsecure.app/v1</bsecure_base_url>
             </general>
