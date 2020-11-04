@@ -103,6 +103,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $order_type         = $orderData->order_type;
         $merchant_order_id  = $orderData->merchant_order_id;
 
+        $product_counts = 0;
         $full_name      = "";
         $first_name     = "";
         $last_name      = "";
@@ -217,15 +218,41 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         
         $quoteItem = $this->cartItemFactory->create();
 
+        $product_id = 0;
+
         //add items in quote
         foreach($orderData->items as $key => $value){
            
            //We then need to use $forceReload = true the last param for multiple products to avoid cached products 
 
-            $product = $this->productRepository->get($value->product_sku, false, $storeId, true);            
+            if(!empty($value->product_id)){
+
+                    $product =  $this->productRepository->getById($value->product_id);
+                    $product_id = $product->getId();
+
+                }else if($value->product_sku){
+
+                    $product = $this->productRepository->get($value->product_sku, false, $storeId, true);
+                    $product_id = $product->getId();
+
+                }else{
+
+                    return false;
+                }
+
+            if(!empty($product_id)){
+
+                $product_counts++;
+                $quote->addProduct($product, intval($value->product_qty));
+            }
+           
             
-            $quote->addProduct($product, intval($value->product_qty));
-            
+        }
+
+
+        if($product_counts == 0){
+
+            return false;
         }
 
         
@@ -459,21 +486,42 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
 
         }else{
 
-            foreach ($orderData->items as $key => $value) {
+            $product_id = 0;
 
-                $product_id = $this->_product->load($this->_product->getIdBySku($value->product_sku));
+            foreach ($orderData->items as $key => $value) {                
+
+
+                if(!empty($value->product_id)){                 
+
+                    $product =  $this->productRepository->getById($value->product_id);
+                    $product_id = $product->getId();
+
+                    if(empty($product_id)){
+
+                        $msg =  __("No product found in store against product_id") . $value->product_id;
+
+                    }
+
+                }else if(!empty($value->product_sku)){
+
+                    $product_id = $this->_product->load($this->_product->getIdBySku($value->product_sku));
+
+                    if(empty($product_id)){
+
+                        $msg =  __("No product found in store against SKU: ") . $value->product_sku;
+                    }                   
+
+                }
 
                 if(empty($product_id)){
 
-                    return  ['status' => true, 'msg' => __("No product found in store against SKU: ") . $value->product_sku];
+                    return  ['status' => true, 'msg' => $msg];
                     
-                }
-
-                
+                }                
             }
         }
 
-        return ['status' => false, 'msg' => ''];
+        return ['status' => false, 'msg' => __('Order data validated successfully.')];
 
     }
 
@@ -685,6 +733,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                     
                     $cart_data['products'][] = [
 
+                                                    'id' => $product->getId(),
                                                     'name' => $product->getName(),
                                                     'sku' => $product->getSku(),
                                                     'quantity' =>  $qty,
@@ -851,6 +900,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $specialPrice = !empty(($specialPrice)) ? floatval($specialPrice) : floatval($regularPrice);
 
         $product_info = [
+                            'product_id' => $product->getId(),
                             'name' => $product->getName(),
                             'sku' => $product->getSku(),                                  
                             'price' => floatval($regularPrice),
