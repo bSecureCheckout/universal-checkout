@@ -900,7 +900,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $specialPrice = !empty(($specialPrice)) ? floatval($specialPrice) : floatval($regularPrice);
 
         $product_info = [
-                            'product_id' => $product->getId(),
+                            'id' => $product->getId(),
                             'name' => $product->getName(),
                             'sku' => $product->getSku(),                                  
                             'price' => floatval($regularPrice),
