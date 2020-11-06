@@ -10,7 +10,7 @@
 Run the following command in Magento 2 root folder:
 
 ```
-composer require b-secure-checkout/universal-checkout
+composer require bsecure/universal-checkout
 php bin/magento setup:upgrade
 php bin/magento setup:static-content:deploy
 ```

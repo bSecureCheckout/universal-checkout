@@ -1,10 +1,13 @@
-jQuery(function(){
+require([
+  'jquery',
+  'jquery/ui',
+], function($){
 	jQuery(document).on('click', '.bsecure-checkout-button', function(){
 		var btn = jQuery(this);		
 		var msgArea = jQuery(".page.messages");		
 		jQuery('.checkout').trigger('processStart');
 
-		jQuery.post(baseUrl+'bsecure/index/bsecureajax',{"action":"bsecure_send"},function(res){ 
+		jQuery.post(BASE_URL+'bsecure/index/bsecureajax',{"action":"bsecure_send"},function(res){ 
 		},"json").done(function(res) {
 		
 		if(res.status){
@@ -36,6 +39,7 @@ jQuery(function(){
 	})
 				
 });
+
 
 
 function scrollToMessageArea(){
