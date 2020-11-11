@@ -1,4 +1,5 @@
-<?php
+<?php 
+
 /*
 * Copyright @ 2020 bSecure. All rights reserved.
 */
@@ -12,14 +13,15 @@ use \Magento\CatalogInventory\Api\StockRegistryInterface;
 use \Magento\Quote\Api\CartManagementInterface;
 use \Magento\Sales\Api\ShipmentRepositoryInterface;
 use \Magento\Shipping\Model\Config;
-use Magento\Sales\Api\Data\OrderExtensionFactory;
+use \Bsecure\UniversalCheckout\Model\CustomOrderModel;
+
 
 
 
 
 class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
 {
-	/**
+    /**
     * @param Magento\Framework\App\Helper\Context $context
     * @param Magento\Store\Model\StoreManagerInterface $storeManager
     * @param Magento\Catalog\Model\Product $product
@@ -33,8 +35,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
     public function __construct(
         \Magento\Framework\App\Helper\Context $context,
         \Magento\Store\Model\StoreManagerInterface $storeManager,
-        \Magento\Catalog\Model\Product $product,
-        \Magento\Framework\Data\Form\FormKey $formkey,
+        \Magento\Catalog\Model\Product $product,        
         \Magento\Quote\Model\QuoteFactory $quote,
         \Magento\Quote\Model\QuoteManagement $quoteManagement,
         \Magento\Customer\Model\CustomerFactory $customerFactory,
@@ -53,14 +54,11 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         CartManagementInterface $cartManagementInterface,
         ShipmentRepositoryInterface $shipmentRepository,
         Config $shippingConfig,
-        OrderExtensionFactory $orderExtensionFactory
-
-
+        CustomOrderModel $customOrderModel
 
     ) {
-        $this->storeManager        = $storeManager;
-        $this->_product             = $product;
-        $this->_formKey             = $formkey;
+        $this->storeManager         = $storeManager;
+        $this->product              = $product;        
         $this->quote                = $quote;
         $this->quoteManagement      = $quoteManagement;
         $this->customerFactory      = $customerFactory;
@@ -79,9 +77,12 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $this->cartItemFactory       = $cartItemFactory;
         $this->productFactory       = $productFactory;
         $this->productRepository    = $productRepository;
+        $this->customOrderModel    = $customOrderModel;
         
         parent::__construct($context);
     }
+
+    // @codingStandardsIgnoreStart
  
     /**
      * Create Order On Your Store
@@ -90,23 +91,24 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
      * @return array
      * 
     */
-    public function createMagentoOrder($orderData) {       
+    public function createMagentoOrder($orderData) 
+    {       
 
-        $bsecure_order_ref  = $orderData->order_ref;
-        $placement_status   = $orderData->placement_status;
-        $payment_status     = $orderData->payment_status;
-        $customer_details   = $orderData->customer;
-        $payment_method     = $orderData->payment_method;
-        $card_details       = $orderData->card_details;
-        $delivery_address   = $orderData->delivery_address;
-        $shipment_method    = $orderData->shipment_method;
-        $order_type         = $orderData->order_type;
-        $merchant_order_id  = $orderData->merchant_order_id;
+        $bsecureOrderRef  = $orderData->order_ref;
+        $placementStatus   = $orderData->placement_status;
+        $paymentStatus     = $orderData->payment_status;
+        $customerDetails   = $orderData->customer;
+        $paymentMethod     = $orderData->payment_method;
+        $cardDetails       = $orderData->card_details;
+        $deliveryAddress   = $orderData->delivery_address;
+        $shipmentMethod    = $orderData->shipment_method;
+        $orderType         = $orderData->order_type;
+        $merchantOrderId  = $orderData->merchant_order_id;
 
-        $product_counts = 0;
-        $full_name      = "";
-        $first_name     = "";
-        $last_name      = "";
+        $productCounts = 0;
+        $fullName      = "";
+        $firstName     = "";
+        $lastName      = "";
         $email          = "";
         $address_1      = "";
         $address_2      = "";
@@ -116,17 +118,16 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $dob            = "";
         $postcode       = "67000";
         $country        = "";
-        $country_code   = "";
+        $countryCode   = "";
         $state          = "";
         $lat            = "";
         $long           = "";
-        $customer_id    = null;
+        $customerId    = null;
 
-        $orderExists = $this->getMagentoOrderByBsecureRefId($bsecure_order_ref);
+        $orderExists = $this->getMagentoOrderByBsecureRefId($bsecureOrderRef);
        
         if(!empty($orderExists)){
-
-            $orderState = $this->magentoOrderStatus($placement_status);       
+            $orderState = $this->magentoOrderStatus($placementStatus);       
             $orderExists->setState($orderState);
             $orderExists->setStatus($orderState);
             $orderExists->save();
@@ -145,173 +146,146 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $quote->setStore($store); //set store for which you create quote
         $quote->setCurrency();
 
-        if(!empty($customer_details->email) && !empty($customer_details->name)){
-
+        if(!empty($customerDetails->email) && !empty($customerDetails->name)){
             $customer   = $this->customerFactory->create();
             $customer->setWebsiteId($websiteId);
-            $customer->loadByEmail($customer_details->email);// load customet by email address           
+            $customer->loadByEmail($customerDetails->email);// load customet by email address           
 
-            $full_name      = $customer_details->name;
-            $first_name     = $this->get_first_name_or_last_name($customer_details->name);
-            $last_name      = $this->get_first_name_or_last_name($customer_details->name,'last_name');
+            $fullName      = $customerDetails->name;
+            $firstName     = $this->get_first_name_or_last_name($customerDetails->name);
+            $lastName      = $this->get_first_name_or_last_name($customerDetails->name, 'last_name');
             
 
-            if(!empty($customer_details->phone_number)){
-                $phone          = $customer_details->phone_number;
+            if(!empty($customerDetails->phone_number)){
+                $phone          = $customerDetails->phone_number;
             }
-            if(!empty($customer_details->country_code)){
-                $country_code   = $customer_details->country_code;
+
+            if(!empty($customerDetails->country_code)){
+                $countryCode   = $customerDetails->country_code;
             }
-            if(!empty($customer_details->gender)){
-                $gender         = $customer_details->gender;
+
+            if(!empty($customerDetails->gender)){
+                $gender         = $customerDetails->gender;
             }
-            if(!empty($customer_details->dob)){
-                $dob            = $customer_details->dob;
+
+            if(!empty($customerDetails->dob)){
+                $dob            = $customerDetails->dob;
             }
 
 
             if(!$customer->getEntityId()){
-
                 // Check if its not a Guest Customer
-                if(!empty($customer_details->email) && !empty($first_name)){
-
+                if(!empty($customerDetails->email) && !empty($firstName)){
                     //If not avilable then create this customer 
                     $customer->setWebsiteId($websiteId)
                             ->setStore($store)
-                            ->setFirstname($first_name)
-                            ->setLastname($last_name)
-                            ->setEmail($customer_details->email) 
-                            ->setPassword($customer_details->email);
+                            ->setFirstname($firstName)
+                            ->setLastname($lastName)
+                            ->setEmail($customerDetails->email) 
+                            ->setPassword($customerDetails->email);
                     $customer->save();
 
                     $customerData = $customer->getDataModel();
-                    $customerData->setCustomAttribute('country_code',$country_code);
+                    $customerData->setCustomAttribute('country_code', $countryCode);
                     $customer->updateData($customerData);
                     $customer->save();
 
-                    $customer_id = $customer->getEntityId();
+                    $customerId = $customer->getEntityId();
 
                     // if you have allready buyer id then you can load customer directly 
-                    $customer = $this->customerRepository->getById($customer_id);
-
-                    
+                    $customer = $this->customerRepository->getById($customerId);
                 }            
-                
             }else{
-
                 $customer = $this->customerRepository->getById($customer->getEntityId());
-
             }
                         
             $quote->assignCustomer($customer); //Assign quote to customer
-
         }else{
-
             // Set Customer Data on Qoute, Do not create customer.
             $quote->setCustomerFirstname("Guest First Name");
             $quote->setCustomerLastname("Guest Last Name");
             $quote->setCustomerEmail("guest@example.com");
             $quote->setCustomerIsGuest(true);
-
         }        
 
         
         $quoteItem = $this->cartItemFactory->create();
 
-        $product_id = 0;
+        $productId = 0;
 
         //add items in quote
         foreach($orderData->items as $key => $value){
-           
            //We then need to use $forceReload = true the last param for multiple products to avoid cached products 
-
             if(!empty($value->product_id)){
-
                     $product =  $this->productRepository->getById($value->product_id);
-                    $product_id = $product->getId();
-
-                }else if($value->product_sku){
-
+                    $productId = $product->getId();
+            }else if($value->product_sku){
                     $product = $this->productRepository->get($value->product_sku, false, $storeId, true);
-                    $product_id = $product->getId();
-
-                }else{
-
+                    $productId = $product->getId();
+            }else{
                     return false;
-                }
+            }
 
-            if(!empty($product_id)){
-
-                $product_counts++;
+            if(!empty($productId)){
+                $productCounts++;
                 $quote->addProduct($product, intval($value->product_qty));
             }
-           
-            
         }
 
 
-        if($product_counts == 0){
-
+        if($productCounts == 0){
             return false;
         }
 
         
-        if(!empty($delivery_address)){           
-
-            if(!empty($delivery_address->name)){
-
-                $full_name     = empty($full_name) ? $this->get_first_name_or_last_name($delivery_address->name) : $full_name;
-                $first_name     = empty($first_name) ? $this->get_first_name_or_last_name($delivery_address->name) : $first_name;
-                $last_name      =  empty($first_name) ? $this->get_first_name_or_last_name($delivery_address->name, 'last_name') : $last_name;
-                
+        if(!empty($deliveryAddress)){           
+            if(!empty($deliveryAddress->name)){
+                $fullName     = empty($fullName) ? $this->get_first_name_or_last_name($deliveryAddress->name) : $fullName;
+                $firstName     = empty($firstName) ? $this->get_first_name_or_last_name($deliveryAddress->name) : $firstName;
+                $lastName      =  empty($firstName) ? $this->get_first_name_or_last_name($deliveryAddress->name, 'last_name') : $lastName;
             }            
             
-            $country        = $delivery_address->country;
-            $city           = $delivery_address->city;
-            $state          = $delivery_address->province;
-            $address_2      = $delivery_address->area;
-            $address_1      = $delivery_address->address;
-            $lat            = $delivery_address->lat;
-            $long           = $delivery_address->long;
-            $postcode        = !empty($delivery_address->postal_code) ? $delivery_address->postal_code : $postcode;
-
+            $country        = $deliveryAddress->country;
+            $city           = $deliveryAddress->city;
+            $state          = $deliveryAddress->province;
+            $address_2      = $deliveryAddress->area;
+            $address_1      = $deliveryAddress->address;
+            $lat            = $deliveryAddress->lat;
+            $long           = $deliveryAddress->long;
+            $postcode        = !empty($deliveryAddress->postal_code) ? $deliveryAddress->postal_code : $postcode;
         }
 
         // return Pakistan to PK or United Kingdom to UK//
         $country_id = array_search($country, \Zend_Locale::getTranslationList('territory'));
 
-        $addresses = isset($customer) ? $customer->getAddresses() : [];
+        $addresses = isset($customer) ? $customer->getAddresses() : array();
 
         $saveInAddressBook = 1;
 
         if(!empty($addresses)){
-
             foreach ($addresses as $key => $value) {       
-
                 // Check if Address already exists
-                if($value->getFirstname() == $this->get_first_name_or_last_name( $full_name) && $value->getLastname() ==  $this->get_first_name_or_last_name( $full_name, 'last_name') &&  $value->getTelephone() == $this->bsecureHelper->phoneWithCountryCode($phone, $country_code) && $value->getCity() == $city && $value->getCountryId() == $country_id && implode(" ",$value->getStreet()) == $address_1 .' '. $address_2){
-                     
+                if($value->getFirstname() == $this->get_first_name_or_last_name($fullName) && $value->getLastname() ==  $this->get_first_name_or_last_name($fullName, 'last_name') &&  $value->getTelephone() == $this->bsecureHelper->phoneWithCountryCode($phone, $countryCode) && $value->getCity() == $city && $value->getCountryId() == $country_id && implode(" ", $value->getStreet()) == $address_1 .' '. $address_2){
                     $saveInAddressBook = 0;
                     continue;
                 }
             }                                                
-
         }
        
 
         $shipping_address = array(
-                            'firstname' => $this->get_first_name_or_last_name( $full_name), //address Details
-                            'lastname'  => $this->get_first_name_or_last_name( $full_name, 'last_name'),
+                            'firstname' => $this->get_first_name_or_last_name($fullName), //address Details
+                            'lastname'  => $this->get_first_name_or_last_name($fullName, 'last_name'),
                             'street'    => $address_1 .' '. $address_2,
                             'city'      => $city,
                             'country_id'=> $country_id,
                             'region'    => $state,
                             'postcode'  => $postcode,
-                            'telephone' => $this->bsecureHelper->phoneWithCountryCode($phone, $country_code),
+                            'telephone' => $this->bsecureHelper->phoneWithCountryCode($phone, $countryCode),
                             'gender'    => $gender,
                             'dob'       => $dob,
                             'fax'       => '',
-                            'country_code' => $country_code,
+                            'country_code' => $countryCode,
                             'lat'       => $lat,
                             'long'      => $long,
                             'save_in_address_book' => $saveInAddressBook,
@@ -320,12 +294,9 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
 
 
         //Set Address to quote
-
-        //if(!empty($customer_id)){
-
-            $quote->getBillingAddress()->addData($shipping_address);
-            $quote->getShippingAddress()->addData($shipping_address);
-        //}
+        
+        $quote->getBillingAddress()->addData($shipping_address);
+        $quote->getShippingAddress()->addData($shipping_address);        
         
         $shippingPrice = 0;
         $shippingMethod = 'freeshipping_freeshipping';
@@ -334,20 +305,15 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         
  
         // Collect Rates and Set Shipping & Payment Method
-
-        if(!empty($shipment_method)){
-            
-            if(!empty($shipment_method->cost)){
-
+        if(!empty($shipmentMethod)){
+            if(!empty($shipmentMethod->cost)){
                 $shippingMethod = 'flatrate_flatrate';
 
-                $shippingPrice = $shipment_method->cost;
-                
+                $shippingPrice = $shipmentMethod->cost;
             }
 
-            if(!empty($shipment_method->name)){                
-
-                $shippingpTitle = $shipment_method->name;                
+            if(!empty($shipmentMethod->name)){                
+                $shippingpTitle = $shipmentMethod->name;                
             }
         }
 
@@ -355,7 +321,6 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
 
         // Check if bSecure Shipping is active
         if(!empty($allActiveShippings['bsecureshipping'])){
-
             $shippingMethod = 'bsecureshipping_bsecureshipping';
         }
  
@@ -367,14 +332,14 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
 
         if(!empty($shippingpTitle)){
                 $shippingAddress->setShippingDescription($shippingpTitle);
-            } 
+        } 
 
         $quote->setPaymentMethod('bsecurepayment'); //payment method
         $quote->setInventoryProcessed(false); //not effetc inventory
         $quote->save(); //Now Save quote and your quote is ready
 
         // Set Sales Order Payment
-        $quote->getPayment()->importData(['method' => 'bsecurepayment']);
+        $quote->getPayment()->importData(array('method' => 'bsecurepayment'));
  
         // Collect Totals & Save Quote
         $quote->collectTotals()->save();
@@ -383,59 +348,57 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $order = $this->quoteManagement->submit($quote);
 
         if(!empty($shippingPrice)){
-            
             $order->setShippingAmount($shippingPrice);        
             $order->setBaseShippingAmount($shippingPrice);
             if(!empty($shippingpTitle)){
                 $order->setShippingDescription($shippingpTitle);
             }
+
             $order->setGrandTotal($order->getGrandTotal() + $shippingPrice); //adding shipping price to grand total
         }
 
         
         $order->save();        
 
-        $orderState = $this->magentoOrderStatus($placement_status);        
+        $orderState = $this->magentoOrderStatus($placementStatus);        
        
         $order->setState($orderState);
         $order->setStatus($orderState);
         // if order type manual then get bSecure Order ID
-        if(!empty($order_type)){
-            if(strtolower($order_type) == 'manual'){
-                $merchant_order_id = $this->getBsecureCustomOrderId();
+        if(!empty($orderType)){
+            if(strtolower($orderType) == 'manual'){
+                $merchantOrderId = $this->getBsecureCustomOrderId();
             }            
         }
+
         $details =  array(
-                        '_bsecure_order_ref' => $bsecure_order_ref,
-                        '_bsecure_order_type' => strtolower($order_type),
-                        '_bsecure_order_id' => $merchant_order_id,
+                        '_bsecure_order_ref' => $bsecureOrderRef,
+                        '_bsecure_order_type' => strtolower($orderType),
+                        '_bsecure_order_id' => $merchantOrderId,
                         
                     );
 
         $payment = $order->getPayment();
         $additionalData = $payment->getAdditionalInformation();       
-        $newAdditionalData = !empty($additionalData) ? array_merge($additionalData,$details) : $details;
+        $newAdditionalData = !empty($additionalData) ? array_merge($additionalData, $details) : $details;
         $payment->setAdditionalInformation($newAdditionalData);
 
-        $order->setData('bsecure_order_ref',$bsecure_order_ref);
-        $order->setData('bsecure_order_type',$order_type);
-        $order->setData('bsecure_order_id',$merchant_order_id);
+        $order->setData('bsecure_order_ref', $bsecureOrderRef);
+        $order->setData('bsecure_order_type', $orderType);
+        $order->setData('bsecure_order_id', $merchantOrderId);
 
        
 
-        if(!empty($payment_method->name)){
+        if(!empty($paymentMethod->name)){
+            $orderNotes = "Payment Method: ".$paymentMethod->name;
 
-            $orderNotes = "Payment Method: ".$payment_method->name;
-
-            //if('Credit Card' == $payment_method->name && 5 == $payment_method->id){
+            //if('Credit Card' == $paymentMethod->name && 5 == $paymentMethod->id){
                
-                if(!empty($card_details)){
-                    
-                    $orderNotes = "Card Type: ".$card_details->card_type.'<br>';
-                    $orderNotes .= "Card Holder Name: ".$card_details->card_name.'<br>';
-                    $orderNotes .= "Card Number: ".$card_details->card_number.'<br>';
-                    $orderNotes .= "Card Expire: ".$card_details->card_expire;                  
-
+                if(!empty($cardDetails)){
+                    $orderNotes = "Card Type: ".$cardDetails->card_type.'<br>';
+                    $orderNotes .= "Card Holder Name: ".$cardDetails->card_name.'<br>';
+                    $orderNotes .= "Card Number: ".$cardDetails->card_number.'<br>';
+                    $orderNotes .= "Card Expire: ".$cardDetails->card_expire;                  
                 }           
 
             //}
@@ -451,17 +414,14 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $increment_id = $order->getRealOrderId();      
 
         if($order->getEntityId()){
-
            return $order->getEntityId();
-
         }else{
-
             return false;
         }
         
         
     }
-    
+    // @codingStandardsIgnoreEnd
 
 
     /**
@@ -471,57 +431,40 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
      * @return array
      * 
     */
-    public function validateOrderData($orderData){
+    public function validateOrderData($orderData)
+    {    
 
 
-        if (empty($orderData->customer) ){
+        if (empty($orderData->items) ) {
+            return  array('status' => true, 'msg' => __("No cart items returned from bSecure server. Please resubmit your order.")); //phpcs:ignore
+        } else {
+            $productId = 0;
 
-            //return  ['status' => true, 'msg' => __("No customer returned from bSecure server. Please resubmit your order.")];
-        }
-
-
-        if (empty($orderData->items) ){
-
-            return  ['status' => true, 'msg' => __("No cart items returned from bSecure server. Please resubmit your order.")];
-
-        }else{
-
-            $product_id = 0;
-
-            foreach ($orderData->items as $key => $value) {                
-
-
-                if(!empty($value->product_id)){                 
-
+            foreach ($orderData->items as $key => $value) {   
+                // @codingStandardsIgnoreStart             
+                if (!empty($value->product_id)) {                 
                     $product =  $this->productRepository->getById($value->product_id);
-                    $product_id = $product->getId();
+                    $productId = $product->getId();
 
-                    if(empty($product_id)){
-
+                    if (empty($productId)) {
                         $msg =  __("No product found in store against product_id") . $value->product_id;
-
                     }
+                } else if (!empty($value->product_sku)) {
+                    $productId = $this->product->load($this->product->getIdBySku($value->product_sku));
 
-                }else if(!empty($value->product_sku)){
-
-                    $product_id = $this->_product->load($this->_product->getIdBySku($value->product_sku));
-
-                    if(empty($product_id)){
-
+                    if (empty($productId)) {
                         $msg =  __("No product found in store against SKU: ") . $value->product_sku;
                     }                   
-
                 }
 
-                if(empty($product_id)){
-
-                    return  ['status' => true, 'msg' => $msg];
-                    
-                }                
+                if (empty($productId)) {
+                    return  array('status' => true, 'msg' => $msg);
+                }    
+                // @codingStandardsIgnoreEnd            
             }
         }
 
-        return ['status' => false, 'msg' => __('Order data validated successfully.')];
+        return array('status' => false, 'msg' => __('Order data validated successfully.'));
 
     }
 
@@ -529,122 +472,63 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
     /*
      * Extract first_name or last_name from fullName
      */
-    public function get_first_name_or_last_name($fullName,$nameType = 'first_name'){
+    public function get_first_name_or_last_name($fullName,$nameType = 'first_name')
+    {
 
         $fullnameArray  = explode(' ', $fullName);
-        $first_name     = !empty($fullnameArray[0]) ? $fullnameArray[0] : "Customer";
-        $last_name      = !empty($fullnameArray[1]) ? end($fullnameArray) : $first_name;
-        $first_name     = str_replace(' '.$last_name, '', $fullName);
+        $firstName     = !empty($fullnameArray[0]) ? $fullnameArray[0] : "Customer";
+        $lastName      = !empty($fullnameArray[1]) ? end($fullnameArray) : $firstName;
+        $firstName     = str_replace(' '.$lastName, '', $fullName);
 
-        return $nameType == 'last_name' ? trim($last_name) : trim($first_name);
+        return $nameType == 'last_name' ? trim($lastName) : trim($firstName);
     }
 
 
     /*
     * Map bSecure statuses with magento default statuses
     */
-    public function magentoOrderStatus($placement_status){
+    public function magentoOrderStatus($placementStatus)
+    {        
 
-        /*"order_status": {
-            'created'       => 1,
-            'initiated'     => 2,
-            'placed'        => 3,
-            'awaiting-confirmation' => 4,
-            'canceled' => 5,
-            'expired' => 6,
-            'failed' => 7
-        }*/
+        $orderStatus = \Magento\Sales\Model\Order::STATE_PROCESSING;
+        $placementStatus = (int) $placementStatus;        
 
-        $order_status = \Magento\Sales\Model\Order::STATE_PROCESSING;
-        $placement_status = (int) $placement_status;        
-
-        switch ($placement_status) {
+        switch ($placementStatus) {
             case 1:
             case 2:    
             case 3:         
-                $order_status = \Magento\Sales\Model\Order::STATE_PROCESSING;
+                $orderStatus = \Magento\Sales\Model\Order::STATE_PROCESSING;
                 break;           
             case 4:
-                $order_status = \Magento\Sales\Model\Order::STATE_HOLDED;
+                $orderStatus = \Magento\Sales\Model\Order::STATE_HOLDED;
                 break;
             case 5:
             case 6:
             case 7:
-                $order_status = \Magento\Sales\Model\Order::STATE_CANCELED;
-                break;
-            /*case 6:
-                $order_status = \Magento\Sales\Model\Order::STATE_CLOSED;
-                break; */             
+                $orderStatus = \Magento\Sales\Model\Order::STATE_CANCELED;
+                break;                            
             default:
-                $order_status = \Magento\Sales\Model\Order::STATE_PROCESSING;;
+                $orderStatus = \Magento\Sales\Model\Order::STATE_PROCESSING;;
                 break;
         }
 
         
 
-        return $order_status;
+        return $orderStatus;
     }
 
 
 
-    public function getMagentoOrderByBsecureRefId($bsecure_order_ref){
+    public function getMagentoOrderByBsecureRefId($bsecureOrderRef)
+    {
 
-        $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
-        $resource = $objectManager->get('Magento\Framework\App\ResourceConnection');
-        $connection = $resource->getConnection();
-        $tableName = $resource->getTableName('sales_order'); // the table name in this example is 'mytest'
-        $orderTable = $resource->getTableName('sales_order');
-         
-        $fields = array('entity_id');
-        $sql = $connection->select()
-                          //->from($tableName); // to select all fields
-                          ->from($tableName, $fields) // to select some particular fields      
-                          ->where('bsecure_order_ref = ?', $bsecure_order_ref) // adding WHERE condition with AND
-                          ->where('bsecure_order_ref <> ?', 'NULL'); // adding WHERE condition with AND
-                          $result = $connection->fetchRow($sql); 
-
-        if(!empty($result['entity_id'])){
-
-            $order = $this->orderRepository->get($result['entity_id']);
-            return $order;
-        }
-
-        
-       /* if(!empty($result)){
-
-            foreach ($result as $key => $value) {
-                $additional_information = (json_decode($value['additional_information']));
-
-                if(!empty($additional_information->_bsecure_order_ref)){
-
-                    $cisess_data = [
-                                    'bsecure_order_ref' => $additional_information->_bsecure_order_ref,
-                                    'bsecure_order_type' => $additional_information->_bsecure_order_type,
-                                    'bsecure_order_id' => $additional_information->_bsecure_order_id,
-                                    ];
-
-                    $connection->update(
-                                            $orderTable,
-                                            $cisess_data,
-                                            ['entity_id = ?' => (int)$value['parent_id']]
-                                        );
-
-                    if($additional_information->_bsecure_order_ref == $bsecure_order_ref){
-
-                        $order_id = $value['parent_id'];
-                        $order = $this->orderRepository->get($order_id);
-                        return $order;
-                    }
-                }
-            }
-        }*/
-
-        return false;
+        return $this->customOrderModel->getOrderCollection($bsecureOrderRef);
     }
 
 
-
-    public function get_cart_data(){
+    // @codingStandardsIgnoreStart
+    public function get_cart_data()
+    {
 
         $objectManager      = \Magento\Framework\App\ObjectManager::getInstance();
         $cart               = $objectManager->get('\Magento\Checkout\Model\Cart'); 
@@ -652,7 +536,6 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $productRepository  = $objectManager->get('Magento\Catalog\Model\ProductRepository');
         $helperImport       = $objectManager->get('Magento\Catalog\Helper\Image');
         $storeManager       = $objectManager->get('Magento\Store\Model\StoreManagerInterface');
-
 
         $subTotal = $cart->getQuote()->getSubtotal();
         $grandTotal = $cart->getQuote()->getGrandTotal();         
@@ -666,18 +549,16 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         // retrieve quote items array
         $items = $cart->getQuote()->getAllItems();
 
-        $discount_amount = 0;       
+        $discountAmount = 0;       
 
-        $cart_data['products'] = [];
-        $configurables = [];        
+        $cartData['products'] = array();
+        $configurables = array();        
         $qty = 1;
        
         if(!empty($items)){
-           
             foreach($items as $index => $item) {              
-                
                 // discount amount must be included with configurable products
-                $discount_amount += $item->getDiscountAmount();
+                $discountAmount += $item->getDiscountAmount();
                 
                 if($item->getProductType() == 'configurable')  //configurable products
                 {
@@ -694,7 +575,6 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
    
                 
                 if($item->getProductType() != 'configurable'){                    
-
                     $product = $productRepository->getById($item->getProductId());
 
                     $regularPrice = $product->getPriceInfo()->getPrice('regular_price')->getValue();
@@ -722,16 +602,11 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                         }
                     }
 
-                    $specialPrice = !empty(($specialPrice)) ? floatval($specialPrice) : floatval($regularPrice);
+                    $specialPrice = !empty(($specialPrice)) ? floatval($specialPrice) : floatval($regularPrice);   
 
-                    //$imageUrl = $helperImport->init($product, 'product_page_image_large')->keepAspectRatio(true)->resize(400)->getUrl();   
-
-                    $imageUrl = $storeManager->getStore()->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA) . 'catalog/product' . $product->getImage();
-
-
+                    $imageUrl = $storeManager->getStore()->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA) . 'catalog/product' . $product->getImage();                    
                     
-                    
-                    $cart_data['products'][] = [
+                    $cartData['products'][] = array(
 
                                                     'id' => $product->getId(),
                                                     'name' => $product->getName(),
@@ -743,40 +618,36 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                                                     'sub_total' => $specialPrice * $qty,
                                                     'image' => $imageUrl,
                                                     'short_description' => $objectManager->create('Magento\Framework\Escaper')->escapeHtml($product->getShortDescription()),
-                                                    'description' => $objectManager->create('Magento\Framework\Escaper')->escapeHtml($product->getDescription()),  
-                                                    //'description' => $product->getShortDescription(),  
+                                                    'description' => $objectManager->create('Magento\Framework\Escaper')->escapeHtml($product->getDescription())                                     
 
-                                                ];
-
-                    
+                                                );
                 }
-                
             }
         }        
 
-        $cart_data['total_amount'] = floatval($grandTotal);
-        $cart_data['sub_total_amount'] = floatval($subTotal);
-        $cart_data['discount_amount'] = floatval($discount_amount);
-        $cart_data['currency_code'] = $storeManager->getStore()->getCurrentCurrency()->getCode();  
+        $cartData['total_amount'] = floatval($grandTotal);
+        $cartData['sub_total_amount'] = floatval($subTotal);
+        $cartData['discount_amount'] = floatval($discountAmount);
+        $cartData['currency_code'] = $storeManager->getStore()->getCurrentCurrency()->getCode();  
 
 
-        return $cart_data; 
+        return $cartData; 
 
     } 
+    // @codingStandardsIgnoreEnd
 
 
-
-    public function get_customer_data(){
+    public function get_customer_data()
+    {
 
         $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
         $customerRepository = $objectManager->get('Magento\Customer\Api\CustomerRepositoryInterface');
         $addressRepository = $objectManager->get('Magento\Customer\Api\AddressRepositoryInterface');
         $customerSession = $objectManager->get('Magento\Customer\Model\Session');
 
-        $customerData = ['country_code' => '', 'phone_number' => ''];
+        $customerData = array('country_code' => '', 'phone_number' => '');
 
-        if($customerSession->isLoggedIn()) {
-
+        if ($customerSession->isLoggedIn()) {
             $customerId = $customerSession->getCustomer()->getId();
 
             $customer = $customerRepository->getById($customerId);
@@ -788,22 +659,21 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
             $billingAddress = $addressRepository->getById($billingAddressId);
             
             
-            $country_code = $customer->getCustomAttribute('country_code')->getValue();
-            $bsecure_auth_code = $customer->getCustomAttribute('bsecure_auth_code')->getValue();
-            $telephone =  $this->bsecureHelper->phoneWithoutCountryCode($billingAddress->getTelephone(), $country_code) ;
+            $countryCode = $customer->getCustomAttribute('country_code')->getValue();
+            $bsecureAuthCode = $customer->getCustomAttribute('bsecure_auth_code')->getValue();
+            $telephone =  $this->bsecureHelper->phoneWithoutCountryCode($billingAddress->getTelephone());
 
-            $customerData = [
+            $customerData = array(
                             'name' => $customerSession->getCustomer()->getName(),
                             'email' => $customerSession->getCustomer()->getEmail(),
-                            'country_code' => !empty($country_code) ? $country_code : '92',
+                            'country_code' => !empty($countryCode) ? $countryCode : '92',
                             'phone_number' => $telephone,
-                        ];
+                        );
             // if auth_code found then send it with request
-            if(!empty($bsecure_auth_code)){
-                $customerData['auth_code'] = $bsecure_auth_code;
+            if (!empty($bsecureAuthCode)) {
+                $customerData['auth_code'] = $bsecureAuthCode;
             }
-            
-          }
+        }
 
           return $customerData;
 
@@ -816,55 +686,53 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return array server response .
      */
-    public function bsecureCreateOrder($accessToken){
+    public function bsecureCreateOrder($accessToken)
+    {
 
-        if(!$accessToken){
-
+        if (!$accessToken) {
             throw new \Magento\Framework\Exception\AlreadyExistsException(
                 __("Access token not found while sending request at bSecure server")
             );               
-           
         }
 
-        $cart_data = $this->get_cart_data();
+        $cartData = $this->get_cart_data();
 
-        $request_data = [
+        $requestData = array(
                             'customer' => $this->get_customer_data(),
-                            'products' => $cart_data['products'],
+                            'products' => $cartData['products'],
                             'order_id' => $this->getBsecureCustomOrderId(),                           
-                            'currency_code' => $cart_data['currency_code'],
-                            'total_amount' => $cart_data['total_amount'],
-                            'sub_total_amount' => $cart_data['sub_total_amount'],
-                            'discount_amount' => $cart_data['discount_amount'],
-                        ];
+                            'currency_code' => $cartData['currency_code'],
+                            'total_amount' => $cartData['total_amount'],
+                            'sub_total_amount' => $cartData['sub_total_amount'],
+                            'discount_amount' => $cartData['discount_amount'],
+                        );
         
 
         $config = $this->bsecureHelper->getBsecureConfig();            
-        $this->order_create_endpoint = !empty($config->orderCreate) ? $config->orderCreate : "";
+        $orderCreateEndpoint = !empty($config->orderCreate) ? $config->orderCreate : "";             
 
-        $order_url = $this->order_create_endpoint;      
+        $headers =  array('Authorization' => 'Bearer '.$accessToken);                              
 
-        $headers =  ['Authorization' => 'Bearer '.$accessToken];                              
-
-        $params =   [
+        $params =   array(
                         'method' => 'POST',
-                        'body' => $request_data,
+                        'body' => $requestData,
                         'headers' => $headers,                  
 
-                    ];      
+                    );      
                 
-        $response = $this->bsecureHelper->bsecureSendCurlRequest($order_url,$params);       
+        $response = $this->bsecureHelper->bsecureSendCurlRequest($orderCreateEndpoint, $params);       
     
         return $response;
         
     }
 
 
-    public function get_product_for_api($product){
+    public function get_product_for_api($product)
+    {
 
         $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
 
-        $imageUrl = $this->storeManager->getStore()->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA) . 'catalog/product' . $product->getImage();
+        $imageUrl = $this->storeManager->getStore()->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA) . 'catalog/product' . $product->getImage(); //phpcs:ignore
 
         $regularPrice = $product->getPriceInfo()->getPrice('regular_price')->getValue();
         $specialPrice = $product->getPriceInfo()->getPrice('special_price')->getValue();
@@ -899,67 +767,71 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
        
         $specialPrice = !empty(($specialPrice)) ? floatval($specialPrice) : floatval($regularPrice);
 
-        $product_info = [
+        $productInfo = array(
                             'id' => $product->getId(),
                             'name' => $product->getName(),
                             'sku' => $product->getSku(),                                  
                             'price' => floatval($regularPrice),
                             'sale_price' => $specialPrice,                                  
                             'image' => $imageUrl,
-                            'short_description' => $objectManager->create('Magento\Framework\Escaper')->escapeHtml($product->getShortDescription()),
-                            'description' => $objectManager->create('Magento\Framework\Escaper')->escapeHtml($product->getDescription()),
+                            'short_description' => $objectManager->create('Magento\Framework\Escaper')->escapeHtml($product->getShortDescription()), //phpcs:ignore
+                            'description' => $objectManager->create('Magento\Framework\Escaper')->escapeHtml($product->getDescription()), //phpcs:ignore
                             'stock_quantity' => $productQty,
                             'is_in_stock' => $productIsInStock,
                             'product_type' => $product->getTypeId()
-                        ];
+                        );
 
 
-        return  $product_info;
+        return  $productInfo;
     }
 
     /*
     * Generate/get bSecure custom order id 
     */
-    public function getBsecureCustomOrderId(){
+    public function getBsecureCustomOrderId($useTimeStamp = true)
+    {
 
+        if ($useTimeStamp) { 
+            // @codingStandardsIgnoreStart
+            // using timestamp in magento for custom order id
+            return substr(time(), 2); 
+            // @codingStandardsIgnoreEnd
+        } else {
+            $lastBsecureMerchantOrderId = 1;
 
-        // using timestamp in magento for custom order id
-        return substr(time(),2); 
+            $merchantOrderId = (int) $this->bsecureHelper->getConfig('universalcheckout/general/bsecure_merchant_order_id'); //phpcs:ignore
+            $merchantOrderId = !empty($merchantOrderId) ? $merchantOrderId+1 : $lastBsecureMerchantOrderId;//phpcs:ignore
 
+            $bsecureLeadingZeroInOrderNumber = $this->bsecureHelper->getConfig('universalcheckout/general/bsecure_leading_zero_in_order_number');//phpcs:ignore
 
-        $previous_bsecure_merchant_order_id = 1;
+            if (empty($bsecureLeadingZeroInOrderNumber)) {
+                // Update with default value
+                $bsecureLeadingZeroInOrderNumber = 8;
+                $this->bsecureHelper->setConfig('universalcheckout/general/bsecure_leading_zero_in_order_number', $bsecureLeadingZeroInOrderNumber); //phpcs:ignore
+            }       
 
-        $merchant_order_id = (int) $this->bsecureHelper->getConfig('universalcheckout/general/bsecure_merchant_order_id');
-        $merchant_order_id = !empty($merchant_order_id) ? $merchant_order_id+1 : $previous_bsecure_merchant_order_id; 
+            $this->bsecureHelper->setConfig('universalcheckout/general/bsecure_merchant_order_id', $merchantOrderId);
+                    
+            $idWithLeadingZero = (str_pad($merchantOrderId, $bsecureLeadingZeroInOrderNumber, '0', STR_PAD_LEFT)); 
 
-        $bsecure_leading_zero_in_order_number = $this->bsecureHelper->getConfig('universalcheckout/general/bsecure_leading_zero_in_order_number');
+            return $idWithLeadingZero;
+        }
 
-        if(empty($bsecure_leading_zero_in_order_number)){
-            // Update with default value
-            $bsecure_leading_zero_in_order_number = 8;
-            $this->bsecureHelper->setConfig('universalcheckout/general/bsecure_leading_zero_in_order_number',$bsecure_leading_zero_in_order_number);
-        }       
-
-        $this->bsecureHelper->setConfig('universalcheckout/general/bsecure_merchant_order_id',$merchant_order_id);
-                
-        $id_with_leading_zero = (str_pad($merchant_order_id, $bsecure_leading_zero_in_order_number, '0', STR_PAD_LEFT)); 
-
-        return $id_with_leading_zero;
+        
     }
 
 
-    public function enable_freeshipping(){
+    public function enable_freeshipping()
+    {
 
         $isFreeShippingEnabled = $this->bsecureHelper->getConfig('carriers/freeshipping/enable');
 
-        if(empty($isFreeShippingEnabled)){ 
-
+        if (empty($isFreeShippingEnabled)) { 
             $this->bsecureHelper->setConfig('carriers/freeshipping/enable', true);
             $this->bsecureHelper->setConfig('carriers/freeshipping/free_shipping_subtotal', NULL);
             $this->bsecureHelper->setConfig('carriers/freeshipping/specificcountry', NULL);
             $this->bsecureHelper->setConfig('carriers/freeshipping/showmethod', false);
             $this->bsecureHelper->setConfig('carriers/freeshipping/sort_order', NULL);
-
         }        
 
     }

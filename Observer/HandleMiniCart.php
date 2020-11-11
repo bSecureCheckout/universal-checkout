@@ -1,35 +1,29 @@
-<?php
+<?php 
 
 namespace Bsecure\UniversalCheckout\Observer;
 
-
 class HandleMiniCart implements \Magento\Framework\Event\ObserverInterface
 {
-	public function __construct(
-       \Bsecure\UniversalCheckout\Helper\Data $bsecureHelper,
-       \Magento\Checkout\Helper\Cart $cartHelper
+    public function __construct(
+        \Bsecure\UniversalCheckout\Helper\Data $bsecureHelper,
+        \Magento\Checkout\Helper\Cart $cartHelper
     ){
-    	$this->bsecureHelper 	= $bsecureHelper;
-    	$this->cartHelper 		= $cartHelper;
+        $this->bsecureHelper  = $bsecureHelper;
+        $this->cartHelper     = $cartHelper;
 
     }
 
+    public function execute()
+    {
+        
+        $moduleEnabled = $this->bsecureHelper->getConfig('universalcheckout/general/enable');        
 
-	public function execute(\Magento\Framework\Event\Observer $observer)
-	{
+        if ($moduleEnabled && $this->cartHelper->getItemsCount() === 0) {            
+            return false;
+        }
 
-		
-		$module_enabled = $this->bsecureHelper->getConfig('universalcheckout/general/enable');
-
-		
-
-		if($module_enabled && $this->cartHelper->getItemsCount() === 0){			
-			
-		}
-
-
-		return $this;
-	}
+        return $this;
+    }
 
 
 }

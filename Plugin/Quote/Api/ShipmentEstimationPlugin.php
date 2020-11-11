@@ -1,4 +1,4 @@
-<?php
+<?php 
 
 namespace Bsecure\UniversalCheckout\Plugin\Quote\Api;
 
@@ -18,16 +18,17 @@ class ShipmentEstimationPlugin
         $cartId,
         \Magento\Quote\Api\Data\AddressInterface $address
     ) {
+        $subject = !empty($subject) ? $subject : '';
+        
         $shippingMethods = $proceed($cartId, $address);
-        //if ($this->customerSession->isLoggedIn()) {
-            foreach ($shippingMethods as $key => $shippingMethod) {
-                //Replace 'bsecureshipping' with your shipping method which you want to hide
-                if ($shippingMethod->getMethodCode() == 'bsecureshipping') {
-                    unset($shippingMethods[$key]);
-                }
+        
+        foreach ($shippingMethods as $key => $shippingMethod) {
+            //Replace 'bsecureshipping' with your shipping method which you want to hide
+            if ($shippingMethod->getMethodCode() == 'bsecureshipping') {
+                unset($shippingMethods[$key]);
             }
+        }
 
-            return $shippingMethods;
-        //}
+        return $shippingMethods;        
     }
 }
