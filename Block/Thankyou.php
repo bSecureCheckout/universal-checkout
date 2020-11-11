@@ -3,8 +3,8 @@ namespace Bsecure\UniversalCheckout\Block;
 
 class Thankyou extends \Magento\Sales\Block\Order\Totals
 {
-    protected $checkoutSession;
-    protected $customerSession;
+    protected $_checkoutSession;
+    protected $_customerSession;
     protected $_orderFactory;
     
     public function __construct(
@@ -13,22 +13,23 @@ class Thankyou extends \Magento\Sales\Block\Order\Totals
         \Magento\Sales\Model\OrderFactory $orderFactory,
         \Magento\Framework\View\Element\Template\Context $context,
         \Magento\Framework\Registry $registry,
-        array $data = []
+        array $data = array()
     ) {
         parent::__construct($context, $registry, $data);
-        $this->checkoutSession = $checkoutSession;
-        $this->customerSession = $customerSession;
+        $this->_checkoutSession = $checkoutSession;
+        $this->_customerSession = $customerSession;
         $this->_orderFactory = $orderFactory;
     }
 
     public function getOrder()
     {
         return  $this->_order = $this->_orderFactory->create()->loadByIncrementId(
-            $this->checkoutSession->getLastRealOrderId());
+            $this->_checkoutSession->getLastRealOrderId()
+        );
     }
 
     public function getCustomerId()
     {
-        return $this->customerSession->getCustomer()->getId();
+        return $this->_customerSession->getCustomer()->getId();
     }
 }

@@ -39,7 +39,7 @@ class Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier implement
         \Magento\Shipping\Model\Rate\ResultFactory $rateResultFactory,
         \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory,
         \Magento\Framework\App\Request\Http $requestt,       
-        array $data = []
+        array $data = array()
     ) {
         $this->_rateResultFactory = $rateResultFactory;
         $this->_rateMethodFactory = $rateMethodFactory;
@@ -54,13 +54,13 @@ class Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier implement
      */
     public function getAllowedMethods()
     {
-        return [$this->_code => $this->getConfigData('name')];
+        return array($this->_code => $this->getConfigData('name'));
     }
 
     /**
      * @return float
      */
-    private function getShippingPrice()
+    public function getShippingPrice()
     {
         $configPrice = $this->getConfigData('price');
 
@@ -75,6 +75,10 @@ class Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier implement
      */
     public function collectRates(RateRequest $request)
     {
+        if (empty($request)) {
+             return false;
+        }
+
         if (!$this->getConfigFlag('active')) {
             return false;
         }

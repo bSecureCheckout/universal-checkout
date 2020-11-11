@@ -1,4 +1,5 @@
-<?php
+<?php 
+
 namespace Bsecure\UniversalCheckout\Block\Cart;
 
 use Magento\Framework\View\Element\Template;
@@ -13,7 +14,7 @@ class Sidebar extends Template
    public function __construct(
        Template\Context $context,
        \Magento\Checkout\Helper\Cart $cartHelper,
-       array $data = []
+       array $data = array()
    ) {
 
       $this->cartHelper = $cartHelper; 
@@ -21,12 +22,12 @@ class Sidebar extends Template
    }
 
 
-   public function isCartEmpty(){
+   public function isCartEmpty()
+   {
 
     $quote = $this->cartHelper->getQuote();
-    $totalItems = count($quote->getAllItems());
-    
-var_dump($totalItems); 
+    $totalItems = count($quote->getAllItems());    
+ 
     return ($totalItems == 0) ? true : false;
 
    }
