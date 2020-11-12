@@ -13,13 +13,13 @@ use Magento\Customer\Model\Customer;
 class InstallData implements InstallDataInterface
 {
     
-    public function install(\Magento\Framework\Setup\ModuleDataSetupInterface $setup, Magento\Framework\Setup\ModuleContextInterface $context) //phpcs:ignore
+    public function install(ModuleDataSetupInterface $setup, ModuleContextInterface $context) //phpcs:ignore
     {
-        $installer = $setup;
+        
         $moduleContext = $context;
         $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
         $customerSetupFactory = $objectManager->create('Magento\Customer\Setup\CustomerSetupFactory');
-        $setupInterface = $objectManager->create('Magento\Framework\Setup\ModuleDataSetupInterface');
+        $setupInterface = $setup;
         $customerSetup = $customerSetupFactory->create(array('setup' => $setupInterface));
         $customerEntity = $customerSetup->getEavConfig()->getEntityType('customer');
         $attributeSetId = $customerEntity->getDefaultAttributeSetId();
