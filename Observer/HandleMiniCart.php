@@ -13,12 +13,12 @@ class HandleMiniCart implements \Magento\Framework\Event\ObserverInterface
 
     }
 
-    public function execute()
+    public function execute(\Magento\Framework\Event\Observer $observer)
     {
         
         $moduleEnabled = $this->bsecureHelper->getConfig('universalcheckout/general/enable');        
 
-        if ($moduleEnabled && $this->cartHelper->getItemsCount() === 0) {            
+        if ($moduleEnabled == 1 && $this->cartHelper->getItemsCount() === 0 && (!$observer)) {            
             return false;
         }
 
