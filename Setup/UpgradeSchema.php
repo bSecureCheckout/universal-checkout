@@ -15,46 +15,48 @@ class UpgradeSchema implements UpgradeSchemaInterface
      * @param ModuleContextInterface $context
      * @return void
      */
-    public function upgrade(SchemaSetupInterface $setup)
+    public function upgrade(SchemaSetupInterface $setup, ModuleContextInterface $context)
     {
         $setup->startSetup();
 
-        $quote = 'quote';
-        $orderTable = 'sales_order';
+        if (version_compare($context->getVersion(), '1.0.0', '>=')) {
+            $quote = 'quote';
+            $orderTable = 'sales_order';
 
-        $setup->getConnection()
-            ->addColumn(
-                $setup->getTable($orderTable),
-                'bsecure_order_ref',
-                array(
-                    'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
-                    'length' => 255,
-                    'comment' =>'bSecure order reference'
-                )
-            );
-        //Order table
-        $setup->getConnection()
-            ->addColumn(
-                $setup->getTable($orderTable),
-                'bsecure_order_type',
-                array(
-                    'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
-                    'length' => 255,
-                    'comment' =>'bSecure order type'
-                )
-            );
+            $setup->getConnection()
+                ->addColumn(
+                    $setup->getTable($orderTable),
+                    'bsecure_order_ref',
+                    array(
+                        'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                        'length' => 255,
+                        'comment' =>'bSecure order reference'
+                    )
+                );
+            //Order table
+            $setup->getConnection()
+                ->addColumn(
+                    $setup->getTable($orderTable),
+                    'bsecure_order_type',
+                    array(
+                        'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                        'length' => 255,
+                        'comment' =>'bSecure order type'
+                    )
+                );
 
-        //Order table
-        $setup->getConnection()
-            ->addColumn(
-                $setup->getTable($orderTable),
-                'bsecure_order_id',
-                array(
-                    'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
-                    'length' => 255,
-                    'comment' =>'bSecure order id'
-                )
-            );
+            //Order table
+            $setup->getConnection()
+                ->addColumn(
+                    $setup->getTable($orderTable),
+                    'bsecure_order_id',
+                    array(
+                        'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                        'length' => 255,
+                        'comment' =>'bSecure order id'
+                    )
+                );
+        }
 
         $setup->endSetup();
     }
