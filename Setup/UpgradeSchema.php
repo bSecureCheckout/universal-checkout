@@ -19,7 +19,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
     {
         $setup->startSetup();
 
-        if (version_compare($context->getVersion(), '1.0.0', '>=')) {
+            $moduleContext = $context;
             $quote = 'quote';
             $orderTable = 'sales_order';
 
@@ -56,7 +56,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
                         'comment' =>'bSecure order id'
                     )
                 );
-        }
+        
 
         $setup->endSetup();
     }
