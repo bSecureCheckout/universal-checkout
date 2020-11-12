@@ -13,7 +13,7 @@ use Magento\Customer\Model\Customer;
 class InstallData implements InstallDataInterface
 {
     
-    public function install(\Magento\Framework\Setup\SchemaSetupInterface $setup, \Magento\Framework\Setup\ModuleContextInterface $context) //phpcs:ignore
+    public function install(\Magento\Framework\Setup\ModuleDataSetupInterface $setup, Magento\Framework\Setup\ModuleContextInterface $context) //phpcs:ignore
     {
         $installer = $setup;
         $moduleContext = $context;
