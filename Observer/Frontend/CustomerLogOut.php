@@ -20,12 +20,12 @@ class CustomerLogOut implements ObserverInterface
         $this->bsecureHelper        = $bsecureHelper;             
     }
 
-    public function execute()
+    public function execute(EventObserver $observer)
     {
         $moduleEnabled = $this->bsecureHelper->getConfig('universalcheckout/general/enable');
         $bsecureBtnShowLogin = $this->bsecureHelper->getConfig('universalcheckout/general/bsecure_button_show_on_login');//phpcs:ignore
-
-        if ($bsecureBtnShowLogin && $moduleEnabled) {
+       
+        if ($bsecureBtnShowLogin == 1 && $moduleEnabled == 1 && $observer) {
             // clear customer bSeucre auth code
             $customerData = $this->customerRepository->getById($this->customerSession->getId());
             $customerData->setCustomAttribute('bsecure_auth_code', NULL);        
