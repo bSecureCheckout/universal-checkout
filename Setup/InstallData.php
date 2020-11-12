@@ -13,24 +13,21 @@ use Magento\Customer\Model\Customer;
 class InstallData implements InstallDataInterface
 {
     
-    public function install()
+    public function install(\Magento\Framework\Setup\SchemaSetupInterface $setup, \Magento\Framework\Setup\ModuleContextInterface $context) //phpcs:ignore
     {
+        $installer = $setup;
+        $moduleContext = $context;
         $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
         $customerSetupFactory = $objectManager->create('Magento\Customer\Setup\CustomerSetupFactory');
-
         $setupInterface = $objectManager->create('Magento\Framework\Setup\ModuleDataSetupInterface');
-
         $customerSetup = $customerSetupFactory->create(array('setup' => $setupInterface));
-
         $customerEntity = $customerSetup->getEavConfig()->getEntityType('customer');
         $attributeSetId = $customerEntity->getDefaultAttributeSetId();
-
         $attributeSetFactory = $objectManager->create('Magento\Eav\Model\Entity\Attribute\SetFactory');
-
         /** @var $attributeSet AttributeSet */
         $attributeSet = $attributeSetFactory->create();
         $attributeGroupId = $attributeSet->getDefaultGroupId($attributeSetId);
-
+       
         $customerSetup->addAttribute(
             \Magento\Customer\Model\Customer::ENTITY, 'country_code', array(
             'type' => 'varchar',
