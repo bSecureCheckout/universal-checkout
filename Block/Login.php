@@ -4,22 +4,17 @@ namespace Bsecure\UniversalCheckout\Block;
 
 class Login extends \Magento\Framework\View\Element\Template
 {
- 
-    protected $cartHelper;
-     protected $bsecureHelper;
+     
+    protected $bsecureHelper;
 
     public function __construct(
-        \Magento\Checkout\Helper\Cart $cartHelper,
-        \Bsecure\UniversalCheckout\Helper\Data $bsecureHelper
+        \Magento\Framework\View\Element\Template\Context  $context,
+        \Bsecure\UniversalCheckout\Helper\Data $bsecureHelper,
+        array $data = []
     ) {
        
-        $this->cartHelper = $cartHelper;
         $this->bsecureHelper = $bsecureHelper;
-    }
-
-    public function getCartHelper()
-    {
-        return $this->cartHelper;
+        parent::__construct($context, $data);
     }
 
     public function getBsecureHelper()
