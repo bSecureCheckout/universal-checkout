@@ -9,7 +9,6 @@ class Checkout extends \Magento\Framework\App\Action\Action
     public $bsecureHelper;
     public $orderHelper;
 
-
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
         \Magento\Framework\View\Result\PageFactory $pageFactory,
@@ -26,15 +25,15 @@ class Checkout extends \Magento\Framework\App\Action\Action
     ) {
         $this->_pageFactory     = $pageFactory;
         $this->_request         = $request;
-        $this->bsecureHelper    = $data; 
-        $this->orderHelper      = $orderHelper; 
-        $this->resultFactory    = $resultFactory; 
-        $this->session          = $session; 
-        $this->quote            = $quote; 
-        $this->cart             = $cart; 
-        $this->orderRepository  = $orderRepository; 
-        $this->messageManager   = $messageManager; 
-        $this->urlInterface     = $urlInterface; 
+        $this->bsecureHelper    = $data;
+        $this->orderHelper      = $orderHelper;
+        $this->resultFactory    = $resultFactory;
+        $this->session          = $session;
+        $this->quote            = $quote;
+        $this->cart             = $cart;
+        $this->orderRepository  = $orderRepository;
+        $this->messageManager   = $messageManager;
+        $this->urlInterface     = $urlInterface;
 
         return parent::__construct($context);
     }
@@ -47,50 +46,45 @@ class Checkout extends \Magento\Framework\App\Action\Action
         if (!empty($bsecureOrderRef)) {
             $this->manageMagentoOrder($bsecureOrderRef);
         }
-        
     }
 
-
-
     /*
-	*  Manage order at magento
-	*/
+    *  Manage order at magento
+    */
     public function manageMagentoOrder($bsecureOrderRef)
-    {        
-       
+    {
         
-        $response = $this->bsecureHelper->bsecureGetOauthToken();    
+        $response = $this->bsecureHelper->bsecureGetOauthToken();
         
-        $validateResponse = $this->bsecureHelper->validateResponse($response, 'token_request');        
+        $validateResponse = $this->bsecureHelper->validateResponse($response, 'token_request');
 
-        if ($validateResponse['error'] ) {                
-            return $this->getResponse()->setBody(__('Response Error: '.$validateResponse['msg']));            
+        if ($validateResponse['error']) {
+            return $this->getResponse()->setBody(__('Response Error: '.$validateResponse['msg']));
         } else {
             // Get Order //
             // @codingStandardsIgnoreStart
             $this->accessToken = $response->access_token;
             // @codingStandardsIgnoreEnd
 
-            $headers =    array('Authorization' => 'Bearer '.$this->accessToken);
+            $headers =    ['Authorization' => 'Bearer '.$this->accessToken];
 
-            $requestData['order_ref'] = $bsecureOrderRef;                                       
+            $requestData['order_ref'] = $bsecureOrderRef;
 
-            $params =     array(
+            $params =     [
                             'method' => 'POST',
                             'body' => $requestData,
-                            'headers' => $headers,                    
+                            'headers' => $headers,
+                        ];
 
-                        );    
+            $config = $this->bsecureHelper->getBsecureConfig();
 
-            $config = $this->bsecureHelper->getBsecureConfig();  
-
-            $this->orderStatusEndpoint = !empty($config->orderStatus) ? $config->orderStatus : "";         
+            $this->orderStatusEndpoint = !empty($config->orderStatus) ? $config->orderStatus : "";
 
             $response = $this->bsecureHelper->bsecureSendCurlRequest($this->orderStatusEndpoint, $params);
 
-            $validateResponse = $this->bsecureHelper->validateResponse($response);    
+            $validateResponse = $this->bsecureHelper->validateResponse($response);
 
-            if ($validateResponse['error']) {                
+            if ($validateResponse['error']) {
                 return $this->getResponse()->setBody(__('Response Error: '.$validateResponse['msg']));
             } else {
                 $orderData = $response->body;
@@ -100,13 +94,12 @@ class Checkout extends \Magento\Framework\App\Action\Action
                 if (!empty($validateOrderData['status'])) {
                     return $this->getResponse()->setBody(__('Error: '.$validateOrderData['msg']));
                 } else {
-                    $orderId = $this->orderHelper->createMagentoOrder($orderData);                                    
+                    $orderId = $this->orderHelper->createMagentoOrder($orderData);
 
-                    if (!empty($orderId) ) {
+                    if (!empty($orderId)) {
                         $order = $this->orderRepository->get($orderId);
-                        $quoteId = $order->getQuoteId();                     
-                        $getRealOrderId = $order->getRealOrderId();                 
-
+                        $quoteId = $order->getQuoteId();
+                        $getRealOrderId = $order->getRealOrderId();
                         
                         $this->session->setLastSuccessQuoteId($quoteId);
                         $this->session->setLastQuoteId($quoteId);
@@ -128,23 +121,13 @@ class Checkout extends \Magento\Framework\App\Action\Action
                 }
             }
         }
-        
-
     }
 
     // Clear Cart //
     protected function _clearQuote()
     {
-        $objectManager = \Magento\Framework\App\ObjectManager::getInstance(); 
-        $cart = $objectManager->create("Magento\Checkout\Model\Cart");
-        $cart->truncate();
-        $cart->getQuote()->setTotalsCollectedFlag(false);
-        $cart->save();      
-
+        $this->cart->truncate();
+        $this->cart->getQuote()->setTotalsCollectedFlag(false);
+        $this->cart->save();
     }
 }
-
-
-
-
-

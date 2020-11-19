@@ -1,15 +1,17 @@
-<?php 
+<?php
 
 /*
 * Copyright @ 2020 bSecure. All rights reserved.
 */
 namespace Bsecure\UniversalCheckout\Helper;
+
 use Magento\Framework\HTTP\Client\Curl;
 
 class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
     const BTN_SHOW_BSECURE_ONLY = 'bsecure_only';
     const BTN_SHOW_BSECURE_BOTH = 'bsecure_mag_both';
+    const BTN_BUY_WITH_BSECURE = 'Bsecure_UniversalCheckout::images/buy-with-bsecure-black.svg';
     public $baseUrl = "";
 
     public function __construct(
@@ -21,7 +23,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
         $this->configInterface = $configInterface;
         $this->curl = $curl;
-        $this->_session = $sessionManager;       
+        $this->_session = $sessionManager;
         parent::__construct($context);
     }
 
@@ -33,14 +35,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         );
     }
 
-
-    public function setConfig($configPath,$value,$default='default')
+    public function setConfig($configPath, $value, $default = 'default')
     {
         $this->configInterface->saveConfig($configPath, $value, $default, 0);
 
         return true;
     }
-
 
     /**
      * Send curl request using magento 2 Curl Client Lib for curl request
@@ -48,12 +48,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @return array server response .
      */
 
-    public function bsecureSendCurlRequest($url, $params = array(),  $retry = 0)
+    public function bsecureSendCurlRequest($url, $params = [], $retry = 0)
     {
         
-        $response = array();
+        $response = [];
 
-        try{
+        try {
             $this->curl->setOption(CURLOPT_TIMEOUT, 20); // How long the connection should stay open in seconds.
             $this->curl->setOption(CURLOPT_SSL_VERIFYHOST, false); // ssl verfication is off for local setup
             $this->curl->setOption(CURLOPT_SSL_VERIFYPEER, false);
@@ -68,34 +68,31 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
             if (!empty($params['method'])) {
                 if ($params['method'] == 'POST') {
-                    $body = !empty($params['body']) ? $params['body'] : array();                    
+                    $body = !empty($params['body']) ? $params['body'] : [];
 
                     $this->curl->post($url, $body);
-                }  
+                }
             } else {
                 $this->curl->get($url);
-            }            
+            }
             
             $response = $this->curl->getBody();
 
             if (!empty($response)) {
-                return json_decode($response);    
+                return json_decode($response);
             } else {
                 // Retry request 3 times if failed
                 if ($retry < 3) {
-                    $retry++;                    
+                    $retry++;
                     $this->bsecureSendCurlRequest($url, $params, $retry);
                 }
-            }             
-        } catch(\Exception $ex) {
+            }
+        } catch (\Exception $ex) {
             return $ex->getMessage();
         }
 
-
         return $response;
-
     }
-
 
     /**
      * Get oauth token from server
@@ -103,7 +100,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @return array server response .
      */
     public function bsecureGetOauthToken()
-    {        
+    {
 
         $grantType     = 'client_credentials';
         $clientId      = $this->getConfig('universalcheckout/general/bsecure_client_id');
@@ -115,17 +112,16 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $oauthUrl = $config->token;
         } else {
             return false;
-        }        
+        }
 
-        $params =   array(
+        $params =   [
                         'method' => 'POST',
-                        'body'      => array(
-                                        'grant_type'     => $grantType, 
-                                        'client_id'     => $clientId, 
+                        'body'      => [
+                                        'grant_type'     => $grantType,
+                                        'client_id'     => $clientId,
                                         'client_secret' => $clientSecret
-                                      ),                         
-                    );
-
+                                      ],
+                    ];
 
         $response = $this->bsecureSendCurlRequest($oauthUrl, $params);
 
@@ -134,11 +130,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         return $response;
-
-        
     }
-
-
 
     /**
      * Get Configuration
@@ -154,7 +146,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         if (!empty($this->baseUrl)) {
             $url = $this->baseUrl."/plugin/configuration";
            
-            $response = $this->bsecureSendCurlRequest($url);            
+            $response = $this->bsecureSendCurlRequest($url);
             
             if (!empty($response->body->api_end_points)) {
                 return $response->body->api_end_points;
@@ -164,70 +156,71 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         return false;
     }
 
-
-
     public function validateResponse($response, $type = '')
     {
 
-        $errorMessage = array("error" => false, "msg" => "");
+        $errorMessage = ["error" => false, "msg" => ""];
 
         if (empty($response)) {
-            return array("error" => true, "msg" => __("No response from bSecure server!"));
+            return ["error" => true, "msg" => __("No response from bSecure server!")];
         }
 
-        if (empty($response->status) && !empty($response->message)) {         
+        if (empty($response->status) && !empty($response->message)) {
             return $errorMessage;
-        } else if ((!empty($response->status) && $response->status != 200)) {
+        } elseif ((!empty($response->status) && $response->status != 200)) {
             $msg = (is_array($response->message)) ? implode(",", $response->message) : $response->message;
 
-            $errorMessage = array("error" => true, "msg" => $msg);
-        } else if (!empty($response->message) && !is_array($response->message) && !empty($response->status)) {
+            $errorMessage = ["error" => true, "msg" => $msg];
+        } elseif (!empty($response->message) && !is_array($response->message) && !empty($response->status)) {
             if ($response->status != 200) {
-                $errorMessage = array("error" => true, "msg" => $response->message);
+                $errorMessage = ["error" => true, "msg" => $response->message];
             }
-        } else if (!empty($response->message) && is_array($response->message) && !empty($response->status)) {
+        } elseif (!empty($response->message) && is_array($response->message) && !empty($response->status)) {
             if ($response->status != 200) {
-                $errorMessage = array("error" => true, "msg" => implode(",", $response->message));
+                $errorMessage = ["error" => true, "msg" => implode(",", $response->message)];
             }
-        }  
+        }
 
         if ($type == 'token_request') {
             // @codingStandardsIgnoreStart
             // If for some reasons token not found then try again //
-            if (empty($response->access_token)) {                
+            if (empty($response->access_token)) {
 
                 $errorMessage = ["error" => true, "msg" => implode(",", $response->message)];
                 
             }
             // @codingStandardsIgnoreEnd
-        } 
+        }
 
         return $errorMessage;
     }
-
 
     /**
      * Builds out the bSecure redirect URL
      *
      * @since    1.0.0
      */
-    public function build_bsecure_redirect_url() 
+    public function buildBsecureRedirectUrl()
     {
 
         // Build the API redirect url.
         $clientId  = $this->getConfig('universalcheckout/general/bsecure_client_id');
         $bsecureClientSecret  = $this->getConfig('universalcheckout/general/bsecure_client_secret');
-        $config = $this->getBsecureConfig();             
-        $ssoEndpoint = !empty($config->ssoLogin) ? $config->ssoLogin : "/";        
+        $config = $this->getBsecureConfig();
+        $ssoEndpoint = !empty($config->ssoLogin) ? $config->ssoLogin : "/";
         
         $responseType  = 'code';
-        $sessioinId    = $this->_session->getSessionId();  
-        $state          = base64_encode("state-".$sessioinId); 
-        $scope          = 'profile';        
+        $sessioinId    = $this->_session->getSessionId();
+        $state          = base64_encode("state-".$sessioinId);
+        $scope          = 'profile';
 
-        return $ssoEndpoint . '?scope=' . $scope . '&response_type=' . $responseType . '&client_id=' . $clientId . '&state=' . $state; //phpcs:ignore
+        $ssoEndpoint = $ssoEndpoint . '?scope=' .
+                       $scope . '&response_type=' .
+                       $responseType . '&client_id=' .
+                       $clientId . '&state=' . $state;
+                       
+        return $ssoEndpoint;
     }
-
 
     /*
      * Validate State
@@ -235,54 +228,46 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function validateState($returnedState)
     {
 
-        $sessioinId    = $this->_session->getSessionId();  
-        $state          = base64_encode("state-".$sessioinId); 
+        $sessioinId    = $this->_session->getSessionId();
+        $state          = base64_encode("state-".$sessioinId);
         
         if ($returnedState != $state) {
-           return false;
+            return false;
         }
 
         return true;
-
     }
-
-
 
     /*
      * Remove country code from phone number
      */
-    public function  phoneWithoutCountryCode($phoneNumber)
+    public function phoneWithoutCountryCode($phoneNumber)
     {
 
-        $phoneNumber = str_replace(array('+','-',' '), '', $phoneNumber);
+        $phoneNumber = str_replace(['+','-',' '], '', $phoneNumber);
 
         if (strlen($phoneNumber) > 10) {
             $phoneNumber = substr($phoneNumber, -10);
         }
         
         return $phoneNumber;
-
     }
-
 
     /*
      * Add country code in phone number
      */
-    public function  phoneWithCountryCode($phoneNumber,$countryCode='92')
+    public function phoneWithCountryCode($phoneNumber, $countryCode = '92')
     {
         
-        $phoneNumber = str_replace(array('+','-',' '), '', $phoneNumber);
+        $phoneNumber = str_replace(['+','-',' '], '', $phoneNumber);
 
         if (strlen($phoneNumber) > 10) {
             $phoneNumber = substr(ltrim($phoneNumber, '+'), -10);
             $phoneNumber = '+'.$countryCode.$phoneNumber;
-        } else {           
+        } else {
             $phoneNumber = '+'.$countryCode.$phoneNumber;
         }
        
         return $phoneNumber;
-
     }
-
-
 }

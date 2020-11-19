@@ -1,17 +1,16 @@
-<?php 
+<?php
 namespace Bsecure\UniversalCheckout\Api;
  
 interface PostManagementInterface
 {
 
     /**
-     * GET for Post api
+     * @api
      * @param string $sku
-     * @return string
+     * @return array
      */
     
     public function getPost($sku);
-
 
     /**
      * Post for product api

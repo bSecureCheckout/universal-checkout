@@ -38,8 +38,8 @@ class Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier implement
         \Psr\Log\LoggerInterface $logger,
         \Magento\Shipping\Model\Rate\ResultFactory $rateResultFactory,
         \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory,
-        \Magento\Framework\App\Request\Http $requestt,       
-        array $data = array()
+        \Magento\Framework\App\Request\Http $requestt,
+        array $data = []
     ) {
         $this->_rateResultFactory = $rateResultFactory;
         $this->_rateMethodFactory = $rateMethodFactory;
@@ -54,7 +54,7 @@ class Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier implement
      */
     public function getAllowedMethods()
     {
-        return array($this->_code => $this->getConfigData('name'));
+        return [$this->_code => $this->getConfigData('name')];
     }
 
     /**
@@ -99,14 +99,8 @@ class Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier implement
 
         $method->setPrice($amount);
         $method->setCost($amount);
-        $result->append($method);       
-
- 
-        
+        $result->append($method);
 
         return $result;
     }
-
-
- 
 }

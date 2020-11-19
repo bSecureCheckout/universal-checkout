@@ -4,8 +4,8 @@
 	
 	<type name="Bsecure\UniversalCheckout\Model\Carrier\Shipping">
       	<plugin name="disable-Shipping" type="Bsecure\UniversalCheckout\Model\Carrier\Shipping" sortOrder="1" />  
-
     </type>
+    
     <type name="Magento\Quote\Api\ShipmentEstimationInterface">
         <plugin name="hide_show_shipping_methods" type="Bsecure\UniversalCheckout\Plugin\Quote\Api\ShipmentEstimationPlugin"/>
     </type>

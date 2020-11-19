@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Bsecure\UniversalCheckout\Setup;
 
@@ -7,29 +7,37 @@ use Magento\Eav\Setup\EavSetupFactory;
 use Magento\Framework\Setup\InstallDataInterface;
 use Magento\Framework\Setup\ModuleContextInterface;
 use Magento\Framework\Setup\ModuleDataSetupInterface;
-use Magento\Eav\Model\Config;
 use Magento\Customer\Model\Customer;
 
 class InstallData implements InstallDataInterface
 {
+    public function __construct(
+        \Magento\Customer\Setup\CustomerSetupFactory $customerSetupFactory,
+        \Magento\Eav\Model\Entity\Attribute\SetFactory $setFactory,
+        Customer $customer
+    ) {
+        
+        $this->customerSetupFactory = $customerSetupFactory;
+        $this->setFactory           = $setFactory;
+        $this->customer           = $customer;
+    }
     
     public function install(ModuleDataSetupInterface $setup, ModuleContextInterface $context) //phpcs:ignore
     {
-        
         $moduleContext = $context;
-        $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
-        $customerSetupFactory = $objectManager->create('Magento\Customer\Setup\CustomerSetupFactory');
         $setupInterface = $setup;
-        $customerSetup = $customerSetupFactory->create(array('setup' => $setupInterface));
+        $customerSetup = $this->customerSetupFactory->create(['setup' => $setupInterface]);
         $customerEntity = $customerSetup->getEavConfig()->getEntityType('customer');
         $attributeSetId = $customerEntity->getDefaultAttributeSetId();
-        $attributeSetFactory = $objectManager->create('Magento\Eav\Model\Entity\Attribute\SetFactory');
+       
         /** @var $attributeSet AttributeSet */
-        $attributeSet = $attributeSetFactory->create();
+        $attributeSet = $this->setFactory->create();
         $attributeGroupId = $attributeSet->getDefaultGroupId($attributeSetId);
        
         $customerSetup->addAttribute(
-            \Magento\Customer\Model\Customer::ENTITY, 'country_code', array(
+            $this->customer::ENTITY,
+            'country_code',
+            [
             'type' => 'varchar',
             'label' => 'Country Code',
             'input' => 'text',
@@ -39,24 +47,26 @@ class InstallData implements InstallDataInterface
             'sort_order' => 1000,
             'position' => 1000,
             'system' => 0,
-            )
-        );       
+            ]
+        );
         
         //add attribute to attribute set
-        $attribute = $customerSetup->getEavConfig()->getAttribute(\Magento\Customer\Model\Customer::ENTITY, 'country_code')//phpcs:ignore
+        $attribute = $customerSetup->getEavConfig()
+        ->getAttribute($this->customer::ENTITY, 'country_code')
         ->addData(
-            array(
+            [
             'attribute_set_id' => $attributeSetId,
             'attribute_group_id' => $attributeGroupId,
             'used_in_forms' => false,
-            )
+            ]
         );
 
         $attribute->save();
 
-
         $customerSetup->addAttribute(
-            \Magento\Customer\Model\Customer::ENTITY, 'bsecure_user_account_email', array(
+            $this->customer::ENTITY,
+            'bsecure_user_account_email',
+            [
             'type' => 'varchar',
             'label' => 'bSecure user account email',
             'input' => 'hidden',
@@ -66,26 +76,26 @@ class InstallData implements InstallDataInterface
             'sort_order' => 1001,
             'position' => 1001,
             'system' => 0
-            )
+            ]
         );
-
-  
         
         //add attribute to attribute set
-        $attribute = $customerSetup->getEavConfig()->getAttribute(\Magento\Customer\Model\Customer::ENTITY, 'bsecure_user_account_email')//phpcs:ignore
+        $attribute = $customerSetup->getEavConfig()
+        ->getAttribute($this->customer::ENTITY, 'bsecure_user_account_email')
         ->addData(
-            array(
+            [
             'attribute_set_id' => $attributeSetId,
             'attribute_group_id' => $attributeGroupId,
             'used_in_forms' => false,
-            )
+            ]
         );
 
         $attribute->save();
 
-
         $customerSetup->addAttribute(
-            \Magento\Customer\Model\Customer::ENTITY, 'bsecure_access_token', array(
+            $this->customer::ENTITY,
+            'bsecure_access_token',
+            [
             'type' => 'varchar',
             'label' => 'bSecure access token',
             'input' => 'hidden',
@@ -95,25 +105,26 @@ class InstallData implements InstallDataInterface
             'sort_order' => 1002,
             'position' => 1002,
             'system' => 0,
-            )
+            ]
         );
-
                 
         //add attribute to attribute set
-        $attribute = $customerSetup->getEavConfig()->getAttribute(\Magento\Customer\Model\Customer::ENTITY, 'bsecure_access_token')//phpcs:ignore
+        $attribute = $customerSetup->getEavConfig()
+        ->getAttribute($this->customer::ENTITY, 'bsecure_access_token')
         ->addData(
-            array(
+            [
             'attribute_set_id' => $attributeSetId,
             'attribute_group_id' => $attributeGroupId,
             'used_in_forms' => false,
-            )
+            ]
         );
 
         $attribute->save();
 
-
         $customerSetup->addAttribute(
-            \Magento\Customer\Model\Customer::ENTITY, 'bsecure_auth_code', array(
+            $this->customer::ENTITY,
+            'bsecure_auth_code',
+            [
             'type' => 'varchar',
             'label' => 'bSecure auth code',
             'input' => 'hidden',
@@ -123,22 +134,20 @@ class InstallData implements InstallDataInterface
             'sort_order' => 1003,
             'position' => 1003,
             'system' => 0,
-            )
+            ]
         );
-
                 
         //add attribute to attribute set
-        $attribute = $customerSetup->getEavConfig()->getAttribute(\Magento\Customer\Model\Customer::ENTITY, 'bsecure_auth_code')//phpcs:ignore
+        $attribute = $customerSetup->getEavConfig()
+        ->getAttribute($this->customer::ENTITY, 'bsecure_auth_code')
         ->addData(
-            array(
+            [
             'attribute_set_id' => $attributeSetId,
             'attribute_group_id' => $attributeGroupId,
             'used_in_forms' => false,
-            )
+            ]
         );
 
-        $attribute->save();       
-        
-
+        $attribute->save();
     }
 }
