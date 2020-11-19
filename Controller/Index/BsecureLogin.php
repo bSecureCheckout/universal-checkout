@@ -87,9 +87,11 @@ class BsecureLogin extends \Magento\Framework\App\Action\Action
 
                    $customerData = $this->customerRepository->getById($customer->getEntityId());
                    $countryCode = $customerData->getCustomAttribute('country_code')->getValue();
-                   $bsecureAuthCode = $customerData->getCustomAttribute('bsecure_auth_code')->getValue();
-                   $bsecureUserAccountEmail = $customerData->getCustomAttribute('
-                   bsecure_user_account_email')->getValue();//phpcs:ignore
+                   $bsecureAuthCode = $customerData->getCustomAttribute('bsecure_auth_code')
+                                      ->getValue();
+                   $bsecureUserAccountEmail = $customerData
+                                              ->getCustomAttribute('bsecure_user_account_email')
+                                              ->getValue();
                    $phoneNumber = $this->user->phone_number;
                    $countryCode = $this->user->country_code;
                    $telephone = $this->bsecureHelper->phoneWithCountryCode($phoneNumber, $countryCode);
