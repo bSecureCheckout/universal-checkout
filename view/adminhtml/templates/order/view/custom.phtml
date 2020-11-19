@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 $order = $block->getOrder();
 
@@ -6,5 +6,5 @@ $payment = $order->getPayment();
 $additionalData = $payment->getAdditionalInformation();
     
 if (!empty($additionalData['_bsecure_order_id'])) { ?>
-   <h2>bSecure Order ID: <?php echo $block->escapeHtmlAttr($additionalData['_bsecure_order_id']); ?></h2>
-<?php } 
+   <h2>bSecure Order ID: <?= $block->escapeHtmlAttr($additionalData['_bsecure_order_id']); ?></h2>
+<?php }

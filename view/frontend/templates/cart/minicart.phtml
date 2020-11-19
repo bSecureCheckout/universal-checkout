@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /**
  * Copyright © Magento, Inc. All rights reserved.
@@ -7,6 +7,7 @@
 
 /** @var $block \Magento\Checkout\Block\Cart\Sidebar */
 /** @var \Magento\Framework\View\Helper\SecureHtmlRenderer $secureRenderer */
+
 ?>
 
 
@@ -15,25 +16,27 @@
            <div class="" data-bind="if: getTotalCartItems() > 0" align="center">
 
        <?php
-
-        $cartHelper         = $this->helper('Magento\Checkout\Helper\Cart');    
-        $helper             = $this->helper('Bsecure\UniversalCheckout\Helper\Data');    
-        $title              = $helper->getConfig('universalcheckout/general/bsecure_title');
-        $moduleEnabled      = $helper->getConfig('universalcheckout/general/enable');
-        $showCheckoutBtn    = $helper->getConfig('universalcheckout/general/show_checkout_btn');
+        $bsecureHelper      = $block->getBsecureHelper();
+        $cartHelper         = $block->getCartHelper();
+        $title              = $block->
+                              getBsecureSettings('bsecure_title');
+        $moduleEnabled      = $block->
+                              getBsecureSettings('enable');
+        $showCheckoutBtn    = $block->
+                              getBsecureSettings('show_checkout_btn');
         
         if ($cartHelper->getSummaryCount() > 0) {
-            if ($showCheckoutBtn == $helper::BTN_SHOW_BSECURE_BOTH && $moduleEnabled) {
+            if ($showCheckoutBtn == $bsecureHelper::BTN_SHOW_BSECURE_BOTH && $moduleEnabled) {
                 ?>
                 
                 <a href="javascript:;" class="minicart-area bsecure-checkout-button">
                   <img    data-role="proceed-to-checkout"
-                    title="<?php echo  $block->escapeHtmlAttr($title); ?>"
-                    alt="<?php echo  $block->escapeHtmlAttr($title); ?>"            
+                    title="<?= $block->escapeHtmlAttr($title); ?>"
+                    alt="<?= $block->escapeHtmlAttr($title); ?>"            
                     class="primary checkout"
-                    src="<?php 
-                    echo $block->escapeHtmlAttr($this->getViewFileUrl('Bsecure_UniversalCheckout::images/buy-with-bsecure-black.svg'));//phpcs:ignore
-                     ?>"
+                    src="<?=
+                    $block->escapeHtmlAttr($block->getViewFileUrl($bsecureHelper::BTN_BUY_WITH_BSECURE));
+                    ?>"
                      />
                 </a>
 
@@ -45,7 +48,7 @@
        <script type="text/x-magento-init">
          {
              "#block-cart-list": {
-                 "Magento_Ui/js/core/app": <?php  echo /* @codingStandardsIgnoreStart */ $block->getJsLayout(); /* @codingStandardsIgnoreEnd */?>
+                 "Magento_Ui/js/core/app": <?= $block->getJsLayout(); ?>
              }
          }
      </script>

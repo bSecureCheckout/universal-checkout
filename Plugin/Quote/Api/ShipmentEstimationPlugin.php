@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Bsecure\UniversalCheckout\Plugin\Quote\Api;
 
@@ -29,6 +29,6 @@ class ShipmentEstimationPlugin
             }
         }
 
-        return $shippingMethods;        
+        return $shippingMethods;
     }
 }

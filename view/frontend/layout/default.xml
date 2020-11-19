@@ -1,15 +1,14 @@
 <?xml version="1.0"?>
 
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
-  <head> 
-
+  <head>
         <!-- Add js-->
         <script src="Bsecure_UniversalCheckout::js/bsecure-front.js"/>
         
    </head>
    <body>
        <referenceContainer name="minicart.addons">
-           <block class="Bsecure\UniversalCheckout\Block\Cart\Sidebar" name="minicart2" template="Bsecure_UniversalCheckout::cart/minicart.phtml" cacheable="false">
+           <block class="Bsecure\UniversalCheckout\Block\Cart\Sidebar" name="minicart2" template="Bsecure_UniversalCheckout::cart/minicart.phtml" cacheable="true">
                <arguments>
                    <argument name="jsLayout" xsi:type="array">
                        <item name="components" xsi:type="array">
@@ -24,5 +23,6 @@
                </arguments>
            </block>
        </referenceContainer>
+
    </body>
 </page>

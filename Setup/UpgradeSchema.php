@@ -27,22 +27,22 @@ class UpgradeSchema implements UpgradeSchemaInterface
                 ->addColumn(
                     $setup->getTable($orderTable),
                     'bsecure_order_ref',
-                    array(
+                    [
                         'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
                         'length' => 255,
                         'comment' =>'bSecure order reference'
-                    )
+                    ]
                 );
             //Order table
             $setup->getConnection()
                 ->addColumn(
                     $setup->getTable($orderTable),
                     'bsecure_order_type',
-                    array(
+                    [
                         'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
                         'length' => 255,
                         'comment' =>'bSecure order type'
-                    )
+                    ]
                 );
 
             //Order table
@@ -50,13 +50,12 @@ class UpgradeSchema implements UpgradeSchemaInterface
                 ->addColumn(
                     $setup->getTable($orderTable),
                     'bsecure_order_id',
-                    array(
+                    [
                         'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
                         'length' => 255,
                         'comment' =>'bSecure order id'
-                    )
+                    ]
                 );
-        
 
         $setup->endSetup();
     }

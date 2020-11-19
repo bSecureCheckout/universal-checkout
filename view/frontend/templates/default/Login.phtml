@@ -1,21 +1,23 @@
-<?php 
+<?php
 
-    $helper = $this->helper('Bsecure\UniversalCheckout\Helper\Data');    
-    $moduleEnabled = $helper->getConfig('universalcheckout/general/enable');
-    $bsecureBtnShowLogin = $helper->getConfig('universalcheckout/general/bsecure_button_show_on_login');
+$bsecureHelper          = $block->getBsecureHelper();
+$moduleEnabled = $block->getBsecureSettings('enable');
+$bsecureBtnShowLogin = $block->
+                    getBsecureSettings('bsecure_button_show_on_login');
+$btnBsecureLogin = 'Bsecure_UniversalCheckout::images/login-with-bsecure.jpg';
     
-    if ($bsecureBtnShowLogin == 1 && $moduleEnabled == 1) {
-        ?>
+if ($bsecureBtnShowLogin == 1 && $moduleEnabled == 1) {
+    ?>
         
-        <a href="<?php echo $block->escapeHtmlAttr($this->getUrl('bsecure/index/bsecurelogin')); ?>" 
+        <a href="<?= $block->escapeHtmlAttr($block->getUrl('bsecure/index/bsecurelogin')); ?>" 
             class="bsecure-login-button">
             <img data-role="bsecure-login"
-                title="<?php echo  $block->escapeHtmlAttr(__("Login with bSecure")); ?>"
-                alt="<?php  echo  $block->escapeHtmlAttr(__("Login with bSecure")); ?>"               
+                title="<?= $block->escapeHtmlAttr(__("Login with bSecure")); ?>"
+                alt="<?= $block->escapeHtmlAttr(__("Login with bSecure")); ?>"               
                 class=""
-                src="<?php 
-                echo $block->escapeHtmlAttr($this->getViewFileUrl('Bsecure_UniversalCheckout::images/login-with-bsecure.jpg'));//phpcs:ignore
-                 ?>"
+                src="<?=
+                $block->escapeHtmlAttr($block->getViewFileUrl($btnBsecureLogin));
+                ?>"
                  /></a>
 
     <?php } ?>

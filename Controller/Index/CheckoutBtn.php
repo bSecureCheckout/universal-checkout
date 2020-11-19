@@ -7,9 +7,6 @@ use Magento\Framework\Session\SessionManager;
 use \Magento\Framework\View\Result\PageFactory;
 use \Bsecure\UniversalCheckout\Helper\Data as BsecureHelper;
 
-
-
-
 class CheckoutBtn extends \Magento\Framework\App\Action\Action
 {
     protected $_coreSession;
@@ -33,9 +30,9 @@ class CheckoutBtn extends \Magento\Framework\App\Action\Action
     public function execute()
     {
         
-        $params = array('_secure' => $this->request->isSecure());
+        $params = ['_secure' => $this->request->isSecure()];
         $moduleEnabled = $this->bsecureHelper->getConfig('universalcheckout/general/enable');
-        $showCheckoutBtn = $this->bsecureHelper->getConfig('universalcheckout/general/show_checkout_btn'); 
+        $showCheckoutBtn = $this->bsecureHelper->getConfig('universalcheckout/general/show_checkout_btn');
 
         if ($moduleEnabled && $showCheckoutBtn == $this->bsecureHelper::BTN_SHOW_BSECURE_BOTH) {
             $this->_coreSession->setMessage(1);
@@ -44,14 +41,15 @@ class CheckoutBtn extends \Magento\Framework\App\Action\Action
         }
 
         $sessionData = ($this->_coreSession->getMessage()) ? true : false;
+        $btnBuyWithBsecure = $this->bsecureHelper::BTN_BUY_WITH_BSECURE;
         return $this->resultFactory->create(\Magento\Framework\Controller\ResultFactory::TYPE_JSON)->setData(
-            array(
+            [
             'success' => true,
             'sessionData' => $sessionData,
             'show_checkout_btn' => $this->bsecureHelper::BTN_SHOW_BSECURE_BOTH,
             'module_enabled' => $moduleEnabled,
-            'btn_img' => $this->assetRepo->getUrlWithParams('Bsecure_UniversalCheckout::images/buy-with-bsecure-black.svg', $params) //phpcs:ignore
-            )
+            'btn_img' => $this->assetRepo->getUrlWithParams($btnBuyWithBsecure, $params) //phpcs:ignore
+            ]
         );
     }
 }

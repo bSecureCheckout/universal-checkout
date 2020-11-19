@@ -1,12 +1,26 @@
-<?php 
+<?php
 
 namespace Bsecure\UniversalCheckout\Block;
 
-class Checkout extends \Magento\Checkout\Block\Onepage\Link
+class Checkout extends \Magento\Framework\View\Element\Template
 {
-    // This function is created for testing purpose, you can add more function as per your requirement
-    public function getTest()
+
+    protected $bsecureHelper;
+
+    public function __construct(
+        \Bsecure\UniversalCheckout\Helper\Data $bsecureHelper
+    ) {
+        
+        $this->bsecureHelper = $bsecureHelper;
+    }
+
+    public function getBsecureHelper()
     {
-        return 'Test Button';
+        return $this->bsecureHelper;
+    }
+
+    public function getBsecureSettings($key)
+    {
+        return $this->bsecureHelper->getConfig('universalcheckout/general/'.$key);
     }
 }

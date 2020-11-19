@@ -1,35 +1,43 @@
-<?php 
+<?php
 
-if ($block->isPossibleOnepageCheckout()): 
-    $helper = $this->helper('Bsecure\UniversalCheckout\Helper\Data');
-    $title = $helper->getConfig('universalcheckout/general/bsecure_title');
-    $moduleEnabled = $helper->getConfig('universalcheckout/general/enable');
-    $showCheckoutBtn = $helper->getConfig('universalcheckout/general/show_checkout_btn');
+if ($block->isPossibleOnepageCheckout()):
+    $bsecureHelper      = $block->getBsecureHelper();
+    $title = $block->
+             getBsecureSettings('bsecure_title');
+    $moduleEnabled = $block->
+                     getBsecureSettings('enable');
+    $showCheckoutBtn =  $block->
+                        getBsecureSettings('show_checkout_btn');
 
     if ($moduleEnabled) {
-        if ($showCheckoutBtn == $helper::BTN_SHOW_BSECURE_ONLY || $showCheckoutBtn == $helper::BTN_SHOW_BSECURE_BOTH) {
-        ?>
+        if ($showCheckoutBtn == $bsecureHelper::BTN_SHOW_BSECURE_ONLY
+         || $showCheckoutBtn == $bsecureHelper::BTN_SHOW_BSECURE_BOTH) {
+            ?>
         
             <a href="javascript:;" class="bsecure-checkout-button"><img data-role="proceed-to-checkout"
-            title="<?php /* @escapeNotVerified */ echo  $block->escapeHtmlAttr(__($title)); ?>"
-            alt="<?php  /* @escapeNotVerified */ echo  $block->escapeHtmlAttr(__($title)); ?>"           
+            title="<?=  $block->escapeHtmlAttr(__($title)); ?>"
+            alt="<?=  $block->escapeHtmlAttr(__($title)); ?>"           
             class="primary checkout"
-            src="<?php 
-             /* @escapeNotVerified */ echo  $block->escapeHtmlAttr($this->getViewFileUrl('Bsecure_UniversalCheckout::images/buy-with-bsecure-black.svg'));//phpcs:ignore
+            src="<?=
+            $block->escapeHtmlAttr($block->getViewFileUrl($bsecureHelper::BTN_BUY_WITH_BSECURE));
             ?>"
              /></a>
 
-             <?php  
+             <?php
              
-                 if ($showCheckoutBtn == $helper::BTN_SHOW_BSECURE_BOTH) {
-                     echo $this->getLayout()->createBlock("\Magento\Checkout\Block\Onepage\Link")->setTemplate("Magento_Checkout::onepage/link.phtml")->toHtml();//phpcs:ignore
-                 }
-             ?>
+                if ($showCheckoutBtn == $bsecureHelper::BTN_SHOW_BSECURE_BOTH) {
+                    echo $block->getLayout()->createBlock($block->getData('link'))
+                    ->setTemplate("Magento_Checkout::onepage/link.phtml")
+                    ->toHtml();
+                }
+                ?>
 
-        <?php } 
+        <?php }
     } else { ?>
-        <?php 
-            echo $this->getLayout()->createBlock("\Magento\Checkout\Block\Onepage\Link")->setTemplate("Magento_Checkout::onepage/link.phtml")->toHtml();//phpcs:ignore 
+        <?= $block->getLayout()->
+                createBlock($block->getData('link'))
+                ->setTemplate("Magento_Checkout::onepage/link.phtml")
+                ->toHtml();
         ?>
 
     <?php }
