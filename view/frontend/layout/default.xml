@@ -8,7 +8,7 @@
    </head>
    <body>
        <referenceContainer name="minicart.addons">
-           <block class="Bsecure\UniversalCheckout\Block\Cart\Sidebar" name="minicart2" template="Bsecure_UniversalCheckout::cart/minicart.phtml" cacheable="true">
+           <block class="Bsecure\UniversalCheckout\Block\Cart\Sidebar" name="minicart2" template="Bsecure_UniversalCheckout::cart/minicart.phtml" cacheable="false">
                <arguments>
                    <argument name="jsLayout" xsi:type="array">
                        <item name="components" xsi:type="array">
