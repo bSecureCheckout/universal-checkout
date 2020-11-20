@@ -8,10 +8,13 @@ class Checkout extends \Magento\Framework\View\Element\Template
     protected $bsecureHelper;
 
     public function __construct(
-        \Bsecure\UniversalCheckout\Helper\Data $bsecureHelper
+    	\Magento\Framework\View\Element\Template\Context  $context,
+        \Bsecure\UniversalCheckout\Helper\Data $bsecureHelper,
+        array $data = []
     ) {
         
         $this->bsecureHelper = $bsecureHelper;
+        parent::__construct($context, $data);
     }
 
     public function getBsecureHelper()
