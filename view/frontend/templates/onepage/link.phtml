@@ -1,6 +1,9 @@
 <?php
 
-if ($block->isPossibleOnepageCheckout()):
+/** @var $block \Bsecure\UniversalCheckout\Block\Checkout */
+/** @var \Magento\Checkout\Block\Onepage\Link $link */
+
+if ($block->getOnePageLink()->isPossibleOnepageCheckout()):
     $bsecureHelper      = $block->getBsecureHelper();
     $title = $block->
              getBsecureSettings('bsecure_title');
@@ -24,9 +27,9 @@ if ($block->isPossibleOnepageCheckout()):
              /></a>
 
              <?php
-             
+                          
                 if ($showCheckoutBtn == $bsecureHelper::BTN_SHOW_BSECURE_BOTH) {
-                    echo $block->getLayout()->createBlock($block->getData('link'))
+                    echo $block->getLayout()->createBlock($block->getOnePageLinkPath())
                     ->setTemplate("Magento_Checkout::onepage/link.phtml")
                     ->toHtml();
                 }
@@ -35,7 +38,7 @@ if ($block->isPossibleOnepageCheckout()):
         <?php }
     } else { ?>
         <?= $block->getLayout()->
-                createBlock($block->getData('link'))
+                createBlock($block->getOnePageLinkPath())
                 ->setTemplate("Magento_Checkout::onepage/link.phtml")
                 ->toHtml();
         ?>
