@@ -12,16 +12,18 @@ class PostManagement implements PostManagementInterface
         \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory,
         \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
         \Bsecure\UniversalCheckout\Helper\OrderHelper $orderHelper,
+        \Bsecure\UniversalCheckout\Helper\Data $bsecureHelper,
         \Magento\CatalogInventory\Api\StockRegistryInterface $stockRegistry,
         \Magento\Sales\Api\OrderRepositoryInterface $orderRepository,
         \Magento\Framework\Serialize\Serializer\Json $json,
-        \Magento\Framework\App\RequestInterface $request
+        \Magento\Framework\Webapi\Rest\Request $request
     ) {
         $this->product              = $product;
         $this->storeManager         = $storeManager;
         $this->resultJsonFactory    = $resultJsonFactory;
         $this->productRepository    = $productRepository;
         $this->orderHelper          = $orderHelper;
+        $this->bsecureHelper        = $bsecureHelper;
         $this->stockRegistry        = $stockRegistry;
         $this->orderRepository      = $orderRepository;
         $this->json                 = $json;
@@ -38,6 +40,18 @@ class PostManagement implements PostManagementInterface
     {
 
         $returnRersult = [];
+
+        $moduleEnabled = $this->bsecureHelper->getConfig('universalcheckout/general/enable');
+
+        if ($moduleEnabled != 1) {
+            $returnRersult = [
+                                'status' => false,
+                                "msg" => __("bSecure Magento Module is disabled!")
+                            ];
+
+            http_response_code(422);
+            return json_encode($returnRersult);
+        }
 
         if (!filter_var($sku, FILTER_SANITIZE_STRING)) {
             $returnRersult = [
@@ -103,7 +117,20 @@ class PostManagement implements PostManagementInterface
 
     public function manageOrder()
     {
-        $orderData = json_decode($this->request->getPost());
+        $moduleEnabled = $this->bsecureHelper->getConfig('universalcheckout/general/enable');
+
+        if ($moduleEnabled != 1) {
+            $returnRersult = [
+                                'status' => false,
+                                "msg" => __("bSecure Magento Module is disabled!")
+                            ];
+
+            http_response_code(422);
+            return json_encode($returnRersult);
+        }
+        
+        $orderData = json_decode($this->request->getContent());
+
         $returnRersult = ['status' => false, 'msg' => __("Invalid Request")];
 
         $validateOrderData =  $this->orderHelper->validateOrderData($orderData);
