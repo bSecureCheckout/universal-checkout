@@ -11,7 +11,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
     const BTN_SHOW_BSECURE_ONLY = 'bsecure_only';
     const BTN_SHOW_BSECURE_BOTH = 'bsecure_mag_both';
-    const BTN_BUY_WITH_BSECURE = 'Bsecure_UniversalCheckout::images/buy-with-bsecure-black.svg';
+    const BTN_BUY_WITH_BSECURE = 'Bsecure_UniversalCheckout::images/bsecure-checkout-img.svg';
     public $baseUrl = "";
 
     public function __construct(
@@ -159,10 +159,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function validateResponse($response, $type = '')
     {
 
-        $errorMessage = ["error" => false, "msg" => ""];
+        $errorMessage = ["error" => false, "msg" => "Success"];
+        $defaultMessage = __("No response from bSecure server! 
+                                Make sure your credentials and settings in the admin are correct!");
 
         if (empty($response)) {
-            return ["error" => true, "msg" => __("No response from bSecure server!")];
+            return ["error" => true, "msg" => $defaultMessage];
         }
 
         if (empty($response->status) && !empty($response->message)) {
@@ -185,8 +187,16 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             // @codingStandardsIgnoreStart
             // If for some reasons token not found then try again //
             if (empty($response->access_token)) {
+                // need validation for $response->message
+                if (!empty($response->message)) {
+                    $resposneMessage = is_array($response->message) ?
+                                        implode(",", $response->message) :
+                                        $response->message;
+                } else {
+                    $resposneMessage = $defaultMessage;
+                }
 
-                $errorMessage = ["error" => true, "msg" => implode(",", $response->message)];
+                $errorMessage = ["error" => true, "msg" => $resposneMessage];
                 
             }
             // @codingStandardsIgnoreEnd

@@ -2,6 +2,8 @@
 
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
   <head>
+        <!-- Add css-->
+        <css src="Bsecure_UniversalCheckout::css/bsecure-style.css" />
         <!-- Add js-->
         <script src="Bsecure_UniversalCheckout::js/bsecure-front.js"/>
         
@@ -23,6 +25,9 @@
                </arguments>
            </block>
        </referenceContainer>
+       <referenceContainer name="after.body.start">
+            <block class="Bsecure\UniversalCheckout\Block\BsecurePopupWindow" name="bsecure-popup" template="Bsecure_UniversalCheckout::bsecure-popup-overlay.phtml"  before="-" cacheable="true" />
+        </referenceContainer>
 
    </body>
 </page>

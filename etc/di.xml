@@ -10,4 +10,19 @@
         <plugin name="hide_show_shipping_methods" type="Bsecure\UniversalCheckout\Plugin\Quote\Api\ShipmentEstimationPlugin"/>
     </type>
 
+    <!-- Adding Columns in sales_order_grid-->
+    <virtualType name="Magento\Sales\Model\ResourceModel\Order\Grid">
+        <arguments>
+            <argument name="columns" xsi:type="array">
+                <item name="bsecure_order_id" xsi:type="string">sales_order.bsecure_order_id</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="Magento\SalesArchive\Model\ResourceModel\Order\Grid" type="Magento\Sales\Model\ResourceModel\Grid">
+        <arguments>
+            <argument name="columns" xsi:type="array">
+                <item name="bsecure_order_id" xsi:type="string">sales_order.bsecure_order_id</item>
+            </argument>
+        </arguments>
+    </virtualType>    
 </config>

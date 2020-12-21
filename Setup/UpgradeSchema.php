@@ -57,6 +57,18 @@ class UpgradeSchema implements UpgradeSchemaInterface
                     ]
                 );
 
+            //Order Grid table
+            $setup->getConnection()
+                ->addColumn(
+                    $setup->getTable('sales_order_grid'),
+                    'bsecure_order_id',
+                    [
+                        'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                        'length' => 255,
+                        'comment' =>'bSecure order id'
+                    ]
+                );
+
         $setup->endSetup();
     }
 }

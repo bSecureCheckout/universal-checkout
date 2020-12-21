@@ -196,6 +196,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                     // if you have allready buyer id then you can load customer directly
                     $customer = $this->customerRepository->getById($customerId);
                 }
+                
             } else {
                 $customer = $this->customerRepository->getById($customer->getEntityId());
             }
@@ -384,6 +385,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                     ];
 
         $payment = $order->getPayment();
+        
         $additionalData = $payment->getAdditionalInformation();
         $newAdditionalData = !empty($additionalData) ? array_merge($additionalData, $details) : $details;
         $payment->setAdditionalInformation($newAdditionalData);
@@ -391,7 +393,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $order->setData('bsecure_order_ref', $bsecureOrderRef);
         $order->setData('bsecure_order_type', $orderType);
         $order->setData('bsecure_order_id', $merchantOrderId);
-
+        
         if (!empty($paymentMethod->name)) {
             $orderNotes = "Payment Method: ".$paymentMethod->name;
 
@@ -442,7 +444,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                     $productId = $product->getId();
 
                     if (empty($productId)) {
-                        $msg =  __("No product found in store against product_id") . $value->product_id;
+                        $msg =  __("No product found in store against product_id: ") . $value->product_id;
                     }
                 } elseif (!empty($value->product_sku)) {
                     $productId = $this->product->load($this->product->getIdBySku($value->product_sku));

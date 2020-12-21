@@ -47,8 +47,9 @@ class BsecureLogin extends \Magento\Framework\App\Action\Action
 
     public function execute()
     {
+        $moduleEnabled = $this->bsecureHelper->getConfig('universalcheckout/general/enable');
 
-        if ($this->customerSession->isLoggedIn()) {
+        if ($this->customerSession->isLoggedIn() || $moduleEnabled != 1) {
             $this->redirectToMyAccountPage();
         }
 

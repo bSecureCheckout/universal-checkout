@@ -16,6 +16,7 @@ class Sidebar extends Template
     */
     public function __construct(
         Template\Context $context,
+        \Magento\Checkout\Model\Cart $carModel,
         \Magento\Checkout\Helper\Cart $cartHelper,
         \Bsecure\UniversalCheckout\Helper\Data $bsecureHelper,
         array $data = []
@@ -23,6 +24,7 @@ class Sidebar extends Template
 
         $this->cartHelper = $cartHelper;
         $this->bsecureHelper = $bsecureHelper;
+        $this->carModel = $carModel;
         parent::__construct($context, $data);
     }
 
@@ -48,5 +50,11 @@ class Sidebar extends Template
     public function getBsecureSettings($key)
     {
         return $this->bsecureHelper->getConfig('universalcheckout/general/'.$key);
+    }
+
+    public function getCartCount()
+    {
+           
+        return $this->cartHelper->getSummaryCount();
     }
 }

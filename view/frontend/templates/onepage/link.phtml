@@ -27,7 +27,6 @@ if ($block->getOnePageLink()->isPossibleOnepageCheckout()):
              /></a>
 
              <?php
-             
                 if ($showCheckoutBtn == $bsecureHelper::BTN_SHOW_BSECURE_BOTH) {
                     echo $block->getLayout()->createBlock($block->getOnePageLinkPath())
                     ->setTemplate("Magento_Checkout::onepage/link.phtml")

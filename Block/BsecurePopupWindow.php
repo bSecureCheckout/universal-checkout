@@ -2,21 +2,37 @@
 
 namespace Bsecure\UniversalCheckout\Block;
 
-class Minicart extends \Magento\Framework\View\Element\Template
+use Magento\Framework\View\Element\Template;
+
+class BsecurePopupWindow extends Template
 {
     protected $cartHelper;
     protected $bsecureHelper;
-
+    
+   /**
+    * Sidebar constructor.
+    * @param Template\Context $context
+    * @param array $data
+    */
     public function __construct(
-        \Magento\Framework\View\Element\Template\Context  $context,
+        Template\Context $context,
         \Magento\Checkout\Helper\Cart $cartHelper,
         \Bsecure\UniversalCheckout\Helper\Data $bsecureHelper,
         array $data = []
     ) {
-       
+
         $this->cartHelper = $cartHelper;
         $this->bsecureHelper = $bsecureHelper;
         parent::__construct($context, $data);
+    }
+
+    public function isCartEmpty()
+    {
+
+        $quote = $this->cartHelper->getQuote();
+        $totalItems = count($quote->getAllItems());
+ 
+        return ($totalItems == 0) ? true : false;
     }
 
     public function getCartHelper()
@@ -32,10 +48,5 @@ class Minicart extends \Magento\Framework\View\Element\Template
     public function getBsecureSettings($key)
     {
         return $this->bsecureHelper->getConfig('universalcheckout/general/'.$key);
-    }
-
-    public function getCartCount()
-    {
-        return $this->cartHelper->getSummaryCount();
     }
 }
