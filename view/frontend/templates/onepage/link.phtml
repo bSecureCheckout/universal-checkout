@@ -12,10 +12,10 @@ if ($block->getOnePageLink()->isPossibleOnepageCheckout()):
     $showCheckoutBtn =  $block->
                         getBsecureSettings('show_checkout_btn');
 
-    if ($moduleEnabled) {
-        if ($showCheckoutBtn == $bsecureHelper::BTN_SHOW_BSECURE_ONLY
-         || $showCheckoutBtn == $bsecureHelper::BTN_SHOW_BSECURE_BOTH) {
-            ?>
+    if ($moduleEnabled && ($showCheckoutBtn == $bsecureHelper::BTN_SHOW_BSECURE_ONLY
+         || $showCheckoutBtn == $bsecureHelper::BTN_SHOW_BSECURE_BOTH)) {
+        
+        ?>
         
             <a href="javascript:;" class="bsecure-checkout-button"><img data-role="proceed-to-checkout"
             title="<?=  $block->escapeHtmlAttr(__($title)); ?>"
@@ -34,7 +34,7 @@ if ($block->getOnePageLink()->isPossibleOnepageCheckout()):
                 }
                 ?>
 
-        <?php }
+        <?php
     } else { ?>
         <?= $block->getLayout()->
                 createBlock($block->getOnePageLinkPath())
