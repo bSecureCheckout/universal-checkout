@@ -1,0 +1,41 @@
+
+<?php
+
+/** @var $block \Bsecure\UniversalCheckout\Block\BsecurePopupWindow */
+
+    $bsecureHelper      = $block->getBsecureHelper();
+    $title = $block->
+             getBsecureSettings('bsecure_title');
+    $moduleEnabled = $block->
+                     getBsecureSettings('enable');
+    $showCheckoutBtn =  $block->
+                        getBsecureSettings('show_checkout_btn');
+
+if ($moduleEnabled) {  ?>
+
+
+        <div class="bsecure-popup-overlay" style="display:none;">
+            <img src="<?=
+            $block->escapeHtmlAttr($block->getViewFileUrl('Bsecure_UniversalCheckout::images/bsecure-logo.png'));
+            ?>" alt="">
+                    <p><?= $block->escapeHtmlAttr(__("No longer see the bSecure window?")); ?>'</p>
+                <a class="" href="javascript:focusBsecureWindow();"><?= $block->escapeHtmlAttr(__("Click Here")) ?></a>
+        </div>
+
+        <div class="bsecure-popup-loader" style="display:none;">
+            <img src="<?=
+            $block->escapeHtmlAttr($block->getViewFileUrl(
+                'Bsecure_UniversalCheckout::images/ajax-loader-large.gif'
+            ));
+                        ?>" alt="">                    
+        </div>       
+           
+
+    <?php
+
+}
+
+?>
+       
+
+    

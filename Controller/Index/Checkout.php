@@ -42,8 +42,9 @@ class Checkout extends \Magento\Framework\App\Action\Action
     {
         
         $bsecureOrderRef = filter_var($this->_request->getParam('order_ref'), FILTER_SANITIZE_STRING);
+        $moduleEnabled = $this->bsecureHelper->getConfig('universalcheckout/general/enable');
 
-        if (!empty($bsecureOrderRef)) {
+        if (!empty($bsecureOrderRef) && $moduleEnabled == 1) {
             $this->manageMagentoOrder($bsecureOrderRef);
         }
     }

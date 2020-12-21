@@ -30,8 +30,10 @@ class Webhook extends \Magento\Framework\App\Action\Action
 
     public function execute()
     {
-        
-        $this->manageMagentoOrder();
+        $moduleEnabled = $this->bsecureHelper->getConfig('universalcheckout/general/enable');
+        if ($moduleEnabled == 1) {
+            $this->manageMagentoOrder();
+        }
     }
 
     public function manageMagentoOrder()

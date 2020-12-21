@@ -34,7 +34,7 @@ class CheckoutBtn extends \Magento\Framework\App\Action\Action
         $moduleEnabled = $this->bsecureHelper->getConfig('universalcheckout/general/enable');
         $showCheckoutBtn = $this->bsecureHelper->getConfig('universalcheckout/general/show_checkout_btn');
 
-        if ($moduleEnabled && $showCheckoutBtn == $this->bsecureHelper::BTN_SHOW_BSECURE_BOTH) {
+        if ($moduleEnabled == 1 && $showCheckoutBtn == $this->bsecureHelper::BTN_SHOW_BSECURE_BOTH) {
             $this->_coreSession->setMessage(1);
         } else {
             $this->_coreSession->unsMessage();
