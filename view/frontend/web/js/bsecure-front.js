@@ -59,16 +59,18 @@ require([
 
 	});
 
-	// handle bSecure checkout btn in minicart
-	jQuery.post(BASE_URL+'bsecure/index/bsecureajax',{"action":"bsecure_checkout_btn_minicart"},function(res){ 
-		},"json").done(function(res) {
-			if (res.status) {
-				if (jQuery(".bsecure-minicart-btn-wrapper")
+	if (jQuery(".bsecure-minicart-btn-wrapper")
 				.find(".minicart-area.bsecure-checkout-button").length == 0 ) {
+		// handle bSecure checkout btn in minicart
+		jQuery.post(BASE_URL+'bsecure/index/bsecureajax',{"action":"bsecure_checkout_btn_minicart"},function(res){ 
+			},"json").done(function(res) {
+				if (res.status) {
+					
 					jQuery(".bsecure-minicart-btn-wrapper").html(res.bsecure_checkout_btn);
+					
 				}
-			}
-		});	
+			});	
+	}
 				
 });
 
