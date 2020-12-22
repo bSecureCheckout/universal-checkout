@@ -12,39 +12,32 @@ class BsecureAjax extends \Magento\Framework\App\Action\Action
         \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory,
         \Bsecure\UniversalCheckout\Helper\Data $bsecureHelper,
         \Bsecure\UniversalCheckout\Helper\OrderHelper $orderHelper,
-        \Magento\Framework\App\Request\Http $request,
-        \Magento\Checkout\Helper\Cart $cartHelper,
-        \Magento\Framework\View\Asset\Repository $assetRepo
+        \Magento\Framework\App\Request\Http $request
     ) {
 
         $this->_resultJsonFactory = $resultJsonFactory;
         $this->bsecureHelper = $bsecureHelper;
         $this->_orderHelper = $orderHelper;
         $this->request = $request;
-        $this->cartHelper = $cartHelper;
-        $this->assetRepo = $assetRepo;
+        
         return parent::__construct($context);
     }
 
     public function execute()
     {
         $result = $this->_resultJsonFactory->create();
+
+        $returnRersult = [
+            'status' => false,
+            'msg' => __("Request Unsuccessful"),
+            'redirect' => ''
+        ];
         
         if ($this->getRequest()->isAjax()) {
 
-            $action = filter_var($this->_request->getParam('action'), FILTER_SANITIZE_STRING);
-
-            if ($action == 'bsecure_checkout_btn_minicart') {
-
-                return $result->setData($this->getCartStatus());
-            }
+            $action = filter_var($this->request->getParam('action'), FILTER_SANITIZE_STRING);
 
             if ($action == 'bsecure_send') {
-
-                $returnRersult =
-                [
-                    
-                ];
 
                 $config = $this->bsecureHelper->getBsecureConfig();
 
@@ -87,64 +80,9 @@ class BsecureAjax extends \Magento\Framework\App\Action\Action
                         }
                     }
                 }
-
-                return $result->setData($returnRersult);
             }
         }
-    }
 
-    public function getCartStatus()
-    {
-
-        if ($this->cartHelper->getSummaryCount() > 0) {
-
-            $returnRersult = [
-                                'status' => true,
-                                'msg' => __("Cart is not empty!"),
-                                'bsecure_checkout_btn' =>  $this->getCheckoutBtn()
-                            ];
-
-        } else {
-
-            $returnRersult = [
-                                'status' => false,
-                                'msg' => __("Cart is empty!"),
-                                'bsecure_checkout_btn' =>  $this->getCheckoutBtn()
-                            ];
-        }
-
-        return $returnRersult;
-    }
-
-    public function getCheckoutBtn()
-    {
-
-        $bsecureCheckoutBtn = "";
-
-        $title = $this->bsecureHelper->getConfig(
-            'universalcheckout/general/bsecure_title'
-        );
-        $moduleEnabled = $this->bsecureHelper->getConfig(
-            'universalcheckout/general/enable'
-        );
-        $showCheckoutBtn = $this->bsecureHelper->getConfig(
-            'universalcheckout/general/show_checkout_btn'
-        );
-
-        if ($showCheckoutBtn == $this->bsecureHelper::BTN_SHOW_BSECURE_BOTH && $moduleEnabled) {
-                         
-            $bsecureCheckoutBtn = '
-                <a href="javascript:;" class="minicart-area bsecure-checkout-button">
-                  <img data-role="proceed-to-checkout"
-                    title="'.$title.'"
-                    alt="'.$title.'"            
-                    class="primary checkout"
-                    src="'.$this->assetRepo->getUrl($this->bsecureHelper::BTN_BUY_WITH_BSECURE).'"
-                     />
-                </a>';
-
-        }
-
-        return $bsecureCheckoutBtn;
+        return $result->setData($returnRersult);
     }
 }

@@ -24,6 +24,7 @@
                               getBsecureSettings('enable');
         $showCheckoutBtn    = $block->
                               getBsecureSettings('show_checkout_btn');
+        $checkoutBtn        = $block->getCheckoutBtn();
         
         if ($block->getCartCount() > 0) {
             if ($showCheckoutBtn == $bsecureHelper::BTN_SHOW_BSECURE_BOTH && $moduleEnabled) {
@@ -58,8 +59,17 @@
     ], function (customerData) {
         'use strict';
 
-        customerData.get('cart').subscribe(function (cartInfo) {
-            console.log('summary_count: ',cartInfo['summary_count']);
+        customerData.get('cart').subscribe(function (cartInfo) { 
+        
+          if (cartInfo['summary_count'] > 0) {
+              if (jQuery(".bsecure-minicart-btn-wrapper")
+                .find(".minicart-area.bsecure-checkout-button").length == 0 ) {                
+                // handle bSecure checkout btn in minicart
+                setTimeout(function(){ 
+                  jQuery(".bsecure-minicart-btn-wrapper").html('<?= $block->escapeJsQuote($checkoutBtn, '\\'); ?>'); 
+                }, 500);
+              }
+            }
         }, this);
     });
 </script>
