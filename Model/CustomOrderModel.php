@@ -29,4 +29,20 @@ class CustomOrderModel extends \Magento\Framework\Model\AbstractModel
 
         return false;
     }
+
+    public function getOrderCollectionByBsecureId($bsecureId)
+    {
+        $collection = $this->_orderCollectionFactory->create()
+         ->addAttributeToSelect('entity_id')
+         ->addFieldToFilter('bsecure_order_id', ['eq' => $bsecureId])
+         ->getLastItem()
+         ->toArray();
+         
+        if (!empty($collection['entity_id'])) {
+            $order = $this->orderRepository->get($collection['entity_id']);
+            return $order;
+        }
+
+        return false;
+    }
 }

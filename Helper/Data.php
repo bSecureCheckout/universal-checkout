@@ -12,6 +12,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     const BTN_SHOW_BSECURE_ONLY = 'bsecure_only';
     const BTN_SHOW_BSECURE_BOTH = 'bsecure_mag_both';
     const BTN_BUY_WITH_BSECURE = 'Bsecure_UniversalCheckout::images/bsecure-checkout-img.svg';
+    const BSECURE_DEV_VIEW_ORDER_URL = 'https://partners-dev.bsecure.app/view-order/';
+    const BSECURE_STAGE_VIEW_ORDER_URL = 'https://partners-stage.bsecure.app/view-order/';
+    const BSECURE_LIVE_VIEW_ORDER_URL = 'https://partner.bsecure.pk/view-order/';
+
     public $baseUrl = "";
 
     public function __construct(
@@ -126,6 +130,15 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $response = $this->bsecureSendCurlRequest($oauthUrl, $params);
 
         if (!empty($response->body)) {
+
+            if (!empty($response->body->checkout_btn)) {
+                $this->setConfig(
+                    'universalcheckout/general/bsecure_checkout_btn_url',
+                    $response->body->checkout_btn
+                );
+                
+            }
+
             return $response->body;
         }
 

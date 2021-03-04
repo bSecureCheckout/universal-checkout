@@ -1,6 +1,8 @@
 <?xml version="1.0" ?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
 	<preference for="Bsecure\UniversalCheckout\Api\PostManagementInterface" type="Bsecure\UniversalCheckout\Model\Api\PostManagement"/>	
+    <preference for="Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider" type="Bsecure\UniversalCheckout\view\Element\UiComponent\DataProvider\DataProvider"/>
+    <preference for="Magento\Reports\Model\ResourceModel\Order\Collection" type="Bsecure\UniversalCheckout\Model\ResourceModel\Order\Collection" />
 	
 	<type name="Bsecure\UniversalCheckout\Model\Carrier\Shipping">
       	<plugin name="disable-Shipping" type="Bsecure\UniversalCheckout\Model\Carrier\Shipping" sortOrder="1" />  
@@ -8,21 +10,5 @@
     
     <type name="Magento\Quote\Api\ShipmentEstimationInterface">
         <plugin name="hide_show_shipping_methods" type="Bsecure\UniversalCheckout\Plugin\Quote\Api\ShipmentEstimationPlugin"/>
-    </type>
-
-    <!-- Adding Columns in sales_order_grid-->
-    <virtualType name="Magento\Sales\Model\ResourceModel\Order\Grid">
-        <arguments>
-            <argument name="columns" xsi:type="array">
-                <item name="bsecure_order_id" xsi:type="string">sales_order.bsecure_order_id</item>
-            </argument>
-        </arguments>
-    </virtualType>
-    <virtualType name="Magento\SalesArchive\Model\ResourceModel\Order\Grid" type="Magento\Sales\Model\ResourceModel\Grid">
-        <arguments>
-            <argument name="columns" xsi:type="array">
-                <item name="bsecure_order_id" xsi:type="string">sales_order.bsecure_order_id</item>
-            </argument>
-        </arguments>
-    </virtualType>    
+    </type>       
 </config>

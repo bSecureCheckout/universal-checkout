@@ -11,6 +11,13 @@ if ($block->getOnePageLink()->isPossibleOnepageCheckout()):
                      getBsecureSettings('enable');
     $showCheckoutBtn =  $block->
                         getBsecureSettings('show_checkout_btn');
+    $checkoutBtnUrl =  $block->
+                        getBsecureSettings('bsecure_checkout_btn_url');
+
+    $checkoutBtnUrl = !empty($checkoutBtnUrl) ? $checkoutBtnUrl.'?v='.random_int(0, 100000000) :
+                      $block->escapeHtmlAttr(
+                          $block->getViewFileUrl($bsecureHelper::BTN_BUY_WITH_BSECURE)
+                      );
 
     if ($moduleEnabled && ($showCheckoutBtn == $bsecureHelper::BTN_SHOW_BSECURE_ONLY
          || $showCheckoutBtn == $bsecureHelper::BTN_SHOW_BSECURE_BOTH)) {
@@ -21,9 +28,7 @@ if ($block->getOnePageLink()->isPossibleOnepageCheckout()):
             title="<?=  $block->escapeHtmlAttr(__($title)); ?>"
             alt="<?=  $block->escapeHtmlAttr(__($title)); ?>"           
             class="primary checkout"
-            src="<?=
-            $block->escapeHtmlAttr($block->getViewFileUrl($bsecureHelper::BTN_BUY_WITH_BSECURE));
-            ?>"
+            src="<?= $block->escapeJsQuote($checkoutBtnUrl); ?>"
              /></a>
 
              <?php

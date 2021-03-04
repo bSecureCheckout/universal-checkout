@@ -51,7 +51,6 @@ class BsecureAjax extends \Magento\Framework\App\Action\Action
                     // @codingStandardsIgnoreStart
                     $this->accessToken = $response->access_token;
                     // @codingStandardsIgnoreEnd
-
                     $response = $this->_orderHelper->bsecureCreateOrder($this->accessToken);
 
                     $validateResponse = $this->bsecureHelper->validateResponse($response);

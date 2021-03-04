@@ -25,6 +25,13 @@
         $showCheckoutBtn    = $block->
                               getBsecureSettings('show_checkout_btn');
         $checkoutBtn        = $block->getCheckoutBtn();
+
+        $checkoutBtnUrl    = $block->
+                              getBsecureSettings('bsecure_checkout_btn_url');
+        $checkoutBtnUrl     = !empty($checkoutBtnUrl) ? $checkoutBtnUrl.'?v='.random_int(0, 100000000) :
+                              $block->escapeHtmlAttr(
+                                  $block->getViewFileUrl($bsecureHelper::BTN_BUY_WITH_BSECURE)
+                              );
         
         if ($block->getCartCount() > 0) {
             if ($showCheckoutBtn == $bsecureHelper::BTN_SHOW_BSECURE_BOTH && $moduleEnabled) {
@@ -34,9 +41,7 @@
                     title="<?= $block->escapeHtmlAttr($title); ?>"
                     alt="<?= $block->escapeHtmlAttr($title); ?>"            
                     class="primary checkout"
-                    src="<?=
-                    $block->escapeHtmlAttr($block->getViewFileUrl($bsecureHelper::BTN_BUY_WITH_BSECURE));
-                    ?>"
+                    src="<?= $block->escapeJsQuote($checkoutBtnUrl); ?>"
                      />
                 </a>
 

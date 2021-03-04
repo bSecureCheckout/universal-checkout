@@ -9,6 +9,12 @@
             </general>
         </universalcheckout>
 
+        <universalcheckout2>
+            <general2>
+                <bsecure_payment_gateway>1</bsecure_payment_gateway>                
+            </general2>
+        </universalcheckout2>
+
         <carriers>
             <bsecureshipping>
                 <active>1</active>
@@ -23,12 +29,12 @@
         </carriers>
 
          <payment>
-            <bsecurepayment>
-                <active>1</active><!-- You can use another methor like capture  -->
-                <model>Bsecure\UniversalCheckout\Model\PaymentMethod</model>
+            <bsecurepayment>                
                 <active>1</active>
-                <title>bSecure Payment</title>
+                <title>bSecure Payment</title>                                             
                 <order_status>pending_payment</order_status><!-- set default order status-->
+                <payment_action>true</payment_action>
+                <model>Bsecure\UniversalCheckout\Model\PaymentMethod</model>
                 <group>offline</group>
             </bsecurepayment>
         </payment>
