@@ -1222,7 +1222,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                 }
             }
             
-        }       
+        }
 
         $order->save();
     }
@@ -1385,7 +1385,6 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
 
         return $order->getEntityId();
     }
-
 
     // Clear Cart //
     public function _clearQuote()
