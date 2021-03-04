@@ -13,5 +13,9 @@ class PaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
      *
      * @var string
      */
-    protected $_code = 'bsecurepayment';
+    const METHOD_CODE     = 'bsecurepayment';
+ 
+    protected $_code      = self::METHOD_CODE;
+
+    protected $_isOffline = true;
 }

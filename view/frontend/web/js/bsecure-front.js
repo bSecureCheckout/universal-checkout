@@ -3,13 +3,15 @@ require([
   'jquery',
   'jquery/ui',
 ], function($){
+
 	if(document.location.hash == '#bsecure-auto-checkout'){
 
+		jQuery("body").addClass("bsecure-popup-handle-loader");
 		jQuery(".bsecure-popup-loader").show();
 	}
 	jQuery(document).on('click', '.bsecure-checkout-button', function(){
 
-		openBsecureWindow(BASE_URL+"/checkout/cart/#bsecure-auto-checkout");
+		openBsecureWindow(BASE_URL+"checkout/cart/?hosted=1#bsecure-auto-checkout");		
 		var btn = jQuery(this);		
 		var msgArea = jQuery(".page.messages");		
 		jQuery('.checkout').trigger('processStart');

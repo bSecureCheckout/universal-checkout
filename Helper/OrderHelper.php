@@ -13,8 +13,10 @@ use \Bsecure\UniversalCheckout\Helper\Data;
 use \Magento\CatalogInventory\Api\StockRegistryInterface;
 use \Magento\Quote\Api\CartManagementInterface;
 use \Magento\Sales\Api\ShipmentRepositoryInterface;
+use \Magento\Sales\Model\Order as OrderRef;
 use \Magento\Shipping\Model\Config;
 use \Bsecure\UniversalCheckout\Model\CustomOrderModel;
+use \Magento\Quote\Api\CartRepositoryInterface;
 
 class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -56,7 +58,12 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Customer\Model\Session $customerSession,
         \Magento\Catalog\Helper\Image $image,
         \Magento\Framework\Escaper $escaper,
-        \Magento\Customer\Api\AddressRepositoryInterface $addressRepository
+        \Magento\Customer\Api\AddressRepositoryInterface $addressRepository,
+        \Magento\Customer\Api\Data\AddressInterfaceFactory $addressFactory,
+        \Magento\Checkout\Model\Session $checkoutSession,
+        OrderRef $orderRef,
+        CartRepositoryInterface $quoteRepository,
+        \Magento\Directory\Model\ResourceModel\Region\CollectionFactory $regionFactory
     ) {
         $this->storeManager         = $storeManager;
         $this->product              = $product;
@@ -84,6 +91,11 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $this->image                = $image;
         $this->escaper              = $escaper;
         $this->addressRepository    = $addressRepository;
+        $this->addressFactory       = $addressFactory;
+        $this->checkoutSession      = $checkoutSession;
+        $this->orderRef             = $orderRef;
+        $this->quoteRepository      = $quoteRepository;
+        $this->regionFactory        = $regionFactory;
         
         parent::__construct($context);
     }
@@ -110,7 +122,6 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $shipmentMethod    = $orderData->shipment_method;
         $orderType         = $orderData->order_type;
         $merchantOrderId  = $orderData->merchant_order_id;
-
         $productCounts = 0;
         $fullName      = "";
         $firstName     = "";
@@ -133,6 +144,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $orderExists = $this->getMagentoOrderByBsecureRefId($bsecureOrderRef);
        
         if (!empty($orderExists)) {
+
             $orderState = $this->magentoOrderStatus($placementStatus);
             $orderExists->setState($orderState);
             $orderExists->setStatus($orderState);
@@ -140,177 +152,206 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
 
             return $orderExists->getId();
         }
-        
+                
         // if store id not found then set 1 as default //
         $storeId    = $this->storeManager->getStore()->getId();
         $storeId    = $storeId > 0 ? $storeId : 1;
         $store      = $this->storeManager->getStore($storeId);
         $websiteId  = $this->storeManager->getStore($storeId)->getWebsiteId();
+
         $quote = $this->quote->create(); //Create object of quote
         $quote->setStore($store); //set store for which you create quote
         $quote->setCurrency();
 
-        if (!empty($customerDetails->email) && !empty($customerDetails->name)) {
-            $customer   = $this->customerFactory->create();
-            $customer->setWebsiteId($websiteId);
-            $customer->loadByEmail($customerDetails->email);// load customet by email address
+        $order = $this->orderRef->loadByIncrementId($merchantOrderId);
 
-            $fullName      = $customerDetails->name;
-            $firstName     = $this->getFirstNameLastName($customerDetails->name);
-            $lastName      = $this->getFirstNameLastName($customerDetails->name, 'last_name');
+        if (!empty($order->getId())) {
+            // if Order type is via bSecure Payment Gateway then handle it from here //
+            if (!empty($orderData->order_type)) {
 
-            if (!empty($customerDetails->phone_number)) {
-                $phone          = $customerDetails->phone_number;
-            }
+                if (strtolower($orderData->order_type) == 'payment_gateway') {
 
-            if (!empty($customerDetails->country_code)) {
-                $countryCode   = $customerDetails->country_code;
-            }
-
-            if (!empty($customerDetails->gender)) {
-                $gender         = $customerDetails->gender;
-            }
-
-            if (!empty($customerDetails->dob)) {
-                $dob            = $customerDetails->dob;
-            }
-
-            if (!$customer->getEntityId()) {
-                // Check if its not a Guest Customer
-                if (!empty($customerDetails->email) && !empty($firstName)) {
-                    //If not avilable then create this customer
-                    $customer->setWebsiteId($websiteId)
-                            ->setStore($store)
-                            ->setFirstname($firstName)
-                            ->setLastname($lastName)
-                            ->setEmail($customerDetails->email)
-                            ->setPassword($customerDetails->email);
-                    $customer->save();
-
-                    $customerData = $customer->getDataModel();
-                    $customerData->setCustomAttribute('country_code', $countryCode);
-                    $customer->updateData($customerData);
-                    $customer->save();
-
-                    $customerId = $customer->getEntityId();
-                    // if you have allready buyer id then you can load customer directly
-                    $customer = $this->customerRepository->getById($customerId);
+                    return $this->updateOrderPaymentGateway($order, $orderData);
                 }
-                
-            } else {
-                $customer = $this->customerRepository->getById($customer->getEntityId());
             }
-                        
-            $quote->assignCustomer($customer); //Assign quote to customer
+
+            $quoteId = $order->getQuoteId();
+
+            if ($quoteId > 0) {
+                $quote = $this->quoteRepository->get($quoteId);
+            }
+
+            $this->updateExistingOrder($order, $orderData);
+            
         } else {
-            // Set Customer Data on Qoute, Do not create customer.
-            $quote->setCustomerFirstname("Guest First Name");
-            $quote->setCustomerLastname("Guest Last Name");
-            $quote->setCustomerEmail("guest@example.com");
-            $quote->setCustomerIsGuest(true);
-        }
-        
-        $quoteItem = $this->cartItemFactory->create();
-        $productId = 0;
 
-        //add items in quote
-        foreach ($orderData->items as $key => $value) {
-           //We then need to use $forceReload = true the last param for multiple products to avoid cached products
-            if (!empty($value->product_id)) {
-                    $product =  $this->productRepository->getById($value->product_id);
-                    $productId = $product->getId();
-            } elseif ($value->product_sku) {
-                    $product = $this->productRepository->get($value->product_sku, false, $storeId, true);
-                    $productId = $product->getId();
+            if (!empty($customerDetails->email) && !empty($customerDetails->name)) {
+
+                $customer   = $this->customerFactory->create();
+                $customer->setWebsiteId($websiteId);
+                $customer->loadByEmail($customerDetails->email);// load customet by email address
+
+                $fullName      = $customerDetails->name;
+                $firstName     = $this->getFirstNameLastName($customerDetails->name);
+                $lastName      = $this->getFirstNameLastName($customerDetails->name, 'last_name');
+
+                if (!empty($customerDetails->phone_number)) {
+                    $phone          = $customerDetails->phone_number;
+                }
+
+                if (!empty($customerDetails->country_code)) {
+                    $countryCode   = $customerDetails->country_code;
+                }
+
+                if (!empty($customerDetails->gender)) {
+                    $gender         = $customerDetails->gender;
+                }
+
+                if (!empty($customerDetails->dob)) {
+                    $dob            = $customerDetails->dob;
+                }
+
+                if (!$customer->getEntityId()) {
+                    // Check if its not a Guest Customer
+                    if (!empty($customerDetails->email) && !empty($firstName)) {
+                        //If not avilable then create this customer
+                        $customer->setWebsiteId($websiteId)
+                                ->setStore($store)
+                                ->setFirstname($firstName)
+                                ->setLastname($lastName)
+                                ->setEmail($customerDetails->email)
+                                ->setPassword($customerDetails->email);
+                        $customer->save();
+
+                        $customerData = $customer->getDataModel();
+                        $customerData->setCustomAttribute('country_code', $countryCode);
+                        $customer->updateData($customerData);
+                        $customer->save();
+
+                        $customerId = $customer->getEntityId();
+                        // if you have allready buyer id then you can load customer directly
+                        $customer = $this->customerRepository->getById($customerId);
+                    }
+                    
+                } else {
+
+                    $customer = $this->customerRepository->getById($customer->getEntityId());
+                }
+                            
+                $quote->assignCustomer($customer); //Assign quote to customer
+
             } else {
-                    return false;
-            }
-
-            if (!empty($productId)) {
-                $productCounts++;
-                $productQty = (int) $value->product_qty;
-                $quote->addProduct($product, $productQty);
-            }
-        }
-
-        if ($productCounts == 0) {
-            return false;
-        }
-        
-        if (!empty($deliveryAddress)) {
-
-            if (!empty($deliveryAddress->name)) {
-
-                $fName = $this->getFirstNameLastName($deliveryAddress->name);
-                $lName = $this->getFirstNameLastName($deliveryAddress->name, 'last_name');
-
-                $fullName = empty($fullName) ? $fName : $fullName;
-                $firstName = empty($firstName) ? $fName : $firstName;
-                $lastName  =  empty($firstName) ? $lName : $lastName;
+                // Set Customer Data on Qoute, Do not create customer.
+                $quote->setCustomerFirstname("Guest First Name");
+                $quote->setCustomerLastname("Guest Last Name");
+                $quote->setCustomerEmail("guest@example.com");
+                $quote->setCustomerIsGuest(true);
             }
             
-            $country        = $deliveryAddress->country;
-            $city           = $deliveryAddress->city;
-            $state          = $deliveryAddress->province;
-            $address_2      = $deliveryAddress->area;
-            $address_1      = $deliveryAddress->address;
-            $lat            = $deliveryAddress->lat;
-            $long           = $deliveryAddress->long;
-            $postcode        = !empty($deliveryAddress->postal_code) ? $deliveryAddress->postal_code : $postcode;
-        }
+            $quoteItem = $this->cartItemFactory->create();
+            $productId = 0;
 
-        // return Pakistan to PK or United Kingdom to UK//
-        $country_id = array_search($country, \Zend_Locale::getTranslationList('territory'));
+            //add items in quote
+            foreach ($orderData->items as $key => $value) {
+               //We then need to use $forceReload = true the last param for multiple products to avoid cached products
+                if (!empty($value->product_id)) {
+                        $product =  $this->productRepository->getById($value->product_id);
+                        $productId = $product->getId();
+                } elseif ($value->product_sku) {
+                        $product = $this->productRepository->get($value->product_sku, false, $storeId, true);
+                        $productId = $product->getId();
+                } else {
+                        return false;
+                }
 
-        $addresses = isset($customer) ? $customer->getAddresses() : [];
-
-        $saveInAddressBook = 1;
-
-        if (!empty($addresses)) {
-            foreach ($addresses as $key => $value) {
-
-                $fName = $this->getFirstNameLastName($fullName);
-                $lName = $this->getFirstNameLastName($fullName, 'last_name');
-                $phoneNum = $this->bsecureHelper->phoneWithCountryCode($phone, $countryCode);
-                // Check if Address already exists
-                if ($value->getFirstname() == $fName
-                    && $value->getLastname() ==  $lName
-                     && $value->getTelephone() == $phoneNum
-                     && $value->getCity() == $city
-                     && $value->getCountryId() == $country_id
-                     && implode(" ", $value->getStreet()) == $address_1 .' '. $address_2) {
-                    $saveInAddressBook = 0;
-                    continue;
+                if (!empty($productId)) {
+                    $productCounts++;
+                    $productQty = (int) $value->product_qty;
+                    $quote->addProduct($product, $productQty);
                 }
             }
+
+            if ($productCounts == 0) {
+                return false;
+            }
+            
+            if (!empty($deliveryAddress)) {
+
+                if (!empty($deliveryAddress->name)) {
+
+                    $fName = $this->getFirstNameLastName($deliveryAddress->name);
+                    $lName = $this->getFirstNameLastName($deliveryAddress->name, 'last_name');
+
+                    $fullName = empty($fullName) ? $fName : $fullName;
+                    $firstName = empty($firstName) ? $fName : $firstName;
+                    $lastName  =  empty($firstName) ? $lName : $lastName;
+                }
+
+                $city = !empty($deliveryAddress->city) ? $deliveryAddress->city : $deliveryAddress->area;
+                
+                $country        = $deliveryAddress->country;
+                $city           = $city;
+                $state          = $deliveryAddress->province;
+                $address_2      = $deliveryAddress->area;
+                $address_1      = $deliveryAddress->address;
+                $lat            = $deliveryAddress->lat;
+                $long           = $deliveryAddress->long;
+                $postcode       = !empty($deliveryAddress->postal_code) ? $deliveryAddress->postal_code : $postcode;
+            }
+
+            // return Pakistan to PK or United Kingdom to UK//
+            $countryId = array_search($country, \Zend_Locale::getTranslationList('territory'));
+
+            $addresses = isset($customer) ? $customer->getAddresses() : [];
+
+            $saveInAddressBook = 1;
+
+            if (!empty($addresses)) {
+                foreach ($addresses as $key => $value) {
+
+                    $fName = $this->getFirstNameLastName($fullName);
+                    $lName = $this->getFirstNameLastName($fullName, 'last_name');
+                    $phoneNum = $this->bsecureHelper->phoneWithCountryCode($phone, $countryCode);
+                    // Check if Address already exists
+                    if ($value->getFirstname() == $fName
+                        && $value->getLastname() ==  $lName
+                         && $value->getTelephone() == $phoneNum
+                         && $value->getCity() == $city
+                         && $value->getCountryId() == $countryId
+                         && implode(" ", $value->getStreet()) == $address_1 .' '. $address_2) {
+                        $saveInAddressBook = 0;
+                        continue;
+                    }
+                }
+            }
+
+            $shipping_address = [
+                                'firstname' => $this->getFirstNameLastName($fullName), //address Details
+                                'lastname'  => $this->getFirstNameLastName($fullName, 'last_name'),
+                                'street'    => $address_1 .' '. $address_2,
+                                'city'      => $city,
+                                'country_id'=> $countryId,
+                                'region'    => $state,
+                                'postcode'  => $postcode,
+                                'telephone' => $this->bsecureHelper->phoneWithCountryCode($phone, $countryCode),
+                                'gender'    => $gender,
+                                'dob'       => $dob,
+                                'fax'       => '',
+                                'country_code' => $countryCode,
+                                'lat'       => $lat,
+                                'long'      => $long,
+                                'save_in_address_book' => $saveInAddressBook,
+                                
+                            ];
+
+            //Set Address to quote
+            $quote->getBillingAddress()->addData($shipping_address);
+            $quote->getShippingAddress()->addData($shipping_address);
         }
-
-        $shipping_address = [
-                            'firstname' => $this->getFirstNameLastName($fullName), //address Details
-                            'lastname'  => $this->getFirstNameLastName($fullName, 'last_name'),
-                            'street'    => $address_1 .' '. $address_2,
-                            'city'      => $city,
-                            'country_id'=> $country_id,
-                            'region'    => $state,
-                            'postcode'  => $postcode,
-                            'telephone' => $this->bsecureHelper->phoneWithCountryCode($phone, $countryCode),
-                            'gender'    => $gender,
-                            'dob'       => $dob,
-                            'fax'       => '',
-                            'country_code' => $countryCode,
-                            'lat'       => $lat,
-                            'long'      => $long,
-                            'save_in_address_book' => $saveInAddressBook,
-                            
-                        ];
-
-        //Set Address to quote
-        $quote->getBillingAddress()->addData($shipping_address);
-        $quote->getShippingAddress()->addData($shipping_address);
         
         $shippingPrice = 0;
         $shippingMethod = 'freeshipping_freeshipping';
-        $shippingpTitle = '';
+        $shippingTitle = '';
 
         // Collect Rates and Set Shipping & Payment Method
         if (!empty($shipmentMethod)) {
@@ -321,7 +362,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
             }
 
             if (!empty($shipmentMethod->name)) {
-                $shippingpTitle = $shipmentMethod->name;
+                $shippingTitle = $shipmentMethod->name;
             }
         }
 
@@ -337,8 +378,8 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                         ->collectShippingRates()
                         ->setShippingMethod($shippingMethod); //shipping method freeshipping_freeshipping
 
-        if (!empty($shippingpTitle)) {
-                $shippingAddress->setShippingDescription($shippingpTitle);
+        if (!empty($shippingTitle)) {
+                $shippingAddress->setShippingDescription($shippingTitle);
         }
 
         $quote->setPaymentMethod('bsecurepayment'); //payment method
@@ -352,13 +393,18 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $quote->collectTotals()->save();
 
         // Create Order From Quote
-        $order = $this->quoteManagement->submit($quote);
+        if (empty($order->getId())) {
 
+            $order = $this->quoteManagement->submit($quote);
+            
+        }
+        
         if (!empty($shippingPrice)) {
+
             $order->setShippingAmount($shippingPrice);
             $order->setBaseShippingAmount($shippingPrice);
-            if (!empty($shippingpTitle)) {
-                $order->setShippingDescription($shippingpTitle);
+            if (!empty($shippingTitle)) {
+                $order->setShippingDescription($shippingTitle);
             }
 
             $order->setGrandTotal($order->getGrandTotal() + $shippingPrice); //adding shipping price to grand total
@@ -393,6 +439,38 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $order->setData('bsecure_order_ref', $bsecureOrderRef);
         $order->setData('bsecure_order_type', $orderType);
         $order->setData('bsecure_order_id', $merchantOrderId);
+
+        // add bSecure discount if available //
+        if (!empty($orderData->summary->discount_amount)) {
+
+            $order->setData('bsecure_discount', $orderData->summary->discount_amount);
+
+            $discount = $orderData->summary->discount_amount;
+            $subTotalAmount = $orderData->summary->sub_total_amount;
+            $totalAmount = $orderData->summary->total_amount;
+
+            $discount = $discount >= ($totalAmount) ? $totalAmount : $discount;
+
+            $order->setSubtotal($subTotalAmount)->setBaseSubtotal($subTotalAmount);
+            $order->setDiscountAmount($discount)->setBaseDiscountAmout($discount);
+            $order->setGrandTotal($totalAmount)->setBaseGrandTotal($totalAmount);
+            $order->setDiscountDescription(__("bSecure"));
+            $order->save();
+        }
+
+         // add bSecure service charges if available //
+        if (!empty($orderData->summary->merchant_service_charges)) {
+
+            $order->setData('bsecure_service_charges', $orderData->summary->merchant_service_charges);
+
+            $subTotalAmount = $orderData->summary->sub_total_amount;
+            $totalAmount = $orderData->summary->total_amount;
+
+            $order->setSubtotal($subTotalAmount)->setBaseSubtotal($subTotalAmount);
+            $order->setGrandTotal($totalAmount)->setBaseGrandTotal($totalAmount);
+            $order->save();
+
+        }
         
         if (!empty($paymentMethod->name)) {
             $orderNotes = "Payment Method: ".$paymentMethod->name;
@@ -414,7 +492,10 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $increment_id = $order->getRealOrderId();
 
         if ($order->getEntityId()) {
+
+            $this->_clearQuote();
             return $order->getEntityId();
+
         } else {
             return false;
         }
@@ -430,6 +511,13 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function validateOrderData($orderData)
     {
+        $defaultMessage = ['status' => false, 'msg' => __('Order data validated successfully.', 'wc-bsecure')];
+
+        if (strtolower($orderData->order_type) == 'payment_gateway') {
+
+            return $defaultMessage;
+        }
+
         if (empty($orderData->items)) {
             return  [
                         'status' => true,
@@ -461,7 +549,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
             }
         }
 
-        return ['status' => false, 'msg' => __('Order data validated successfully.')];
+        return $defaultMessage;
     }
 
     /*
@@ -489,6 +577,8 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         switch ($placementStatus) {
             case 1:
             case 2:
+                $orderStatus = 'bsecure_draft';
+                break;
             case 3:
                 $orderStatus = \Magento\Sales\Model\Order::STATE_PROCESSING;
                 break;
@@ -499,6 +589,9 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
             case 6:
             case 7:
                 $orderStatus = \Magento\Sales\Model\Order::STATE_CANCELED;
+                break;
+            case 8:
+                $orderStatus = \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT;
                 break;
             default:
                 $orderStatus = \Magento\Sales\Model\Order::STATE_PROCESSING;
@@ -592,7 +685,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $cartData['sub_total_amount'] = floatval($subTotal);
         $cartData['discount_amount'] = floatval($discountAmount);
         $cartData['currency_code'] = $this->storeManager->getStore()->getCurrentCurrency()->getCode();
-
+        
         return $cartData;
     }
     // @codingStandardsIgnoreEnd
@@ -685,10 +778,13 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
 
         $cartData = $this->getCartData();
 
+        $orderId = $this->createOrderFromCartToMagento();
+        $orderId = !empty($orderId) ? $orderId : $this->getBsecureCustomOrderId();
+
         $requestData = [
                             'customer' => $this->getCustomerData(),
                             'products' => $cartData['products'],
-                            'order_id' => $this->getBsecureCustomOrderId(),
+                            'order_id' => $orderId,
                             'currency_code' => $cartData['currency_code'],
                             'total_amount' => $cartData['total_amount'],
                             'sub_total_amount' => $cartData['sub_total_amount'],
@@ -773,21 +869,34 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
     /*
     * Generate/get bSecure custom order id
     */
-    public function getBsecureCustomOrderId($useTimeStamp = true)
+    public function getBsecureCustomOrderId($merchantOrderId = 0, $useTimeStamp = true)
     {
         $configPath = 'universalcheckout/general/';
-        $merchantOrderId = 'bsecure_merchant_order_id';
+        $merchantOrderIdKey = 'bsecure_merchant_order_id';
         $leadingZeroOrderNum = 'bsecure_leading_zero_in_order_number';
 
         if ($useTimeStamp) {
             // @codingStandardsIgnoreStart
             // using timestamp in magento for custom order id
-            return substr(time(), 2);
+            $merchantOrderId = substr(time(), 2);
+
+            $record = $this->customOrderModel->getOrderCollectionByBsecureId($merchantOrderId);
+            if (!empty($record)) {
+
+                $merchantOrderId = substr(time(), 2);
+                $this->getBsecureCustomOrderId($merchantOrderId);
+
+            } else {
+
+                $this->bsecureHelper->setConfig($configPath.$merchantOrderIdKey, $merchantOrderId);
+                return $merchantOrderId;
+            }
+           
             // @codingStandardsIgnoreEnd
         } else {
             $lastMerchantOrderId = 1;
 
-            $merchantOrderId = (int) $this->bsecureHelper->getConfig($configPath.$merchantOrderId); //phpcs:ignore
+            $merchantOrderId = (int) $this->bsecureHelper->getConfig($configPath.$merchantOrderIdKey); //phpcs:ignore
             $merchantOrderId = !empty($merchantOrderId) ? $merchantOrderId+1 : $lastMerchantOrderId;//phpcs:ignore
 
             $leadingZero = $this->bsecureHelper->getConfig($configPath.$leadingZeroOrderNum);//phpcs:ignore
@@ -798,11 +907,490 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                 $this->bsecureHelper->setConfig($configPath.$leadingZeroOrderNum, $leadingZero); //phpcs:ignore
             }
 
-            $this->bsecureHelper->setConfig($configPath.$merchantOrderId, $merchantOrderId);
+            $this->bsecureHelper->setConfig($configPath.$merchantOrderIdKey, $merchantOrderId);
                     
             $idWithLeadingZero = (str_pad($merchantOrderId, $leadingZero, '0', STR_PAD_LEFT));
 
             return $idWithLeadingZero;
         }
+    }
+
+    /*
+    * Create order from cart first at magento then send to bsecure
+    */
+    public function createOrderFromCartToMagento()
+    {
+
+        $quote = $this->checkoutSession->getQuote();
+
+        $quote->setCustomerFirstname("Guest First Name");
+        $quote->setCustomerLastname("Guest Last Name");
+        $quote->setCustomerEmail("guest@example.com");
+        $quote->setCustomerIsGuest(true);
+
+        $shipping_address = [
+                            'firstname' => "Guest First Name", //address Details
+                            'lastname'  => "Guest Last Name",
+                            'street'    => "H# L300",
+                            'city'      => "Karachi",
+                            'country_id'=> "PK",
+                            'region'    => "Sindh",
+                            'postcode'  => "75000",
+                            'telephone' => "03331234567",
+                            'gender'    => "Male",
+                            'save_in_address_book' => 0,
+                            
+                        ];
+
+        //Set Address to quote
+        $quote->getBillingAddress()->addData($shipping_address);
+        $quote->getShippingAddress()->addData($shipping_address);
+
+        $shippingPrice = 0;
+        $shippingMethod = 'freeshipping_freeshipping';
+        $shippingTitle = '';
+
+        // Collect Rates and Set Shipping & Payment Method
+        if (!empty($shipmentMethod)) {
+            if (!empty($shipmentMethod->cost)) {
+                $shippingMethod = 'flatrate_flatrate';
+
+                $shippingPrice = $shipmentMethod->cost;
+            }
+
+            if (!empty($shipmentMethod->name)) {
+                $shippingTitle = $shipmentMethod->name;
+            }
+        }
+
+        $allActiveShippings = $this->shippingConfig->getActiveCarriers();
+
+        // Check if bSecure Shipping is active
+        if (!empty($allActiveShippings['bsecureshipping'])) {
+            $shippingMethod = 'bsecureshipping_bsecureshipping';
+        }
+ 
+        $shippingAddress = $quote->getShippingAddress();
+        $shippingAddress->setCollectShippingRates(true)
+                        ->collectShippingRates()
+                        ->setShippingMethod($shippingMethod); //shipping method freeshipping_freeshipping
+
+        if (!empty($shippingTitle)) {
+                $shippingAddress->setShippingDescription($shippingTitle);
+        }
+
+        $quote->setPaymentMethod('bsecurepayment'); //payment method
+        $quote->setInventoryProcessed(false); //not effetc inventory
+        $quote->save(); //Now Save quote and your quote is ready
+
+        // Set Sales Order Payment
+        $quote->getPayment()->importData(['method' => 'bsecurepayment']);
+ 
+        // Collect Totals & Save Quote
+        $quote->collectTotals()->save();
+
+        // Create Order From Quote
+        $order = $this->quoteManagement->submit($quote);
+        //bsecure_draft
+        $order->setState('bsecure_draft');
+        $order->setStatus('bsecure_draft');
+
+        $order->save();
+
+        $increment_id = $order->getRealOrderId();
+
+        $quote->setIsActive(true)->save();
+
+        return $increment_id;
+    }
+
+    public function updateExistingOrder($order, $orderData)
+    {
+
+        $fullName      = "";
+        $firstName     = "";
+        $lastName      = "";
+        $email          = "";
+        $address_1      = "";
+        $address_2      = "";
+        $phone          = "";
+        $gender         = "";
+        $city           = "";
+        $dob            = "";
+        $postcode       = "67000";
+        $country        = "";
+        $countryCode   = "";
+        $state          = "";
+        $lat            = "";
+        $long           = "";
+        $customerId    = null;
+       
+        $storeId    = $this->storeManager->getStore()->getId();
+        $storeId    = $storeId > 0 ? $storeId : 1;
+        $store      = $this->storeManager->getStore($storeId);
+        $websiteId  = $this->storeManager->getStore($storeId)->getWebsiteId();
+        
+        $customerDetails   = $orderData->customer;
+
+        if (!empty($customerDetails->email) && !empty($customerDetails->name)) {
+
+            $customer   = $this->customerFactory->create();
+            $customer->setWebsiteId($websiteId);
+            $customer->loadByEmail($customerDetails->email);// load customet by email address
+
+            $fullName      = $customerDetails->name;
+            $firstName     = $this->getFirstNameLastName($customerDetails->name);
+            $lastName      = $this->getFirstNameLastName($customerDetails->name, 'last_name');
+
+            if (!empty($customerDetails->phone_number)) {
+                $phone          = $customerDetails->phone_number;
+            }
+
+            if (!empty($customerDetails->country_code)) {
+                $countryCode   = $customerDetails->country_code;
+            }
+
+            if (!empty($customerDetails->gender)) {
+                $gender         = $customerDetails->gender;
+            }
+
+            if (!empty($customerDetails->dob)) {
+                $dob            = $customerDetails->dob;
+            }
+
+            if (!$customer->getEntityId()) {
+                // Check if its not a Guest Customer
+                if (!empty($customerDetails->email) && !empty($firstName)) {
+                    //If not avilable then create this customer
+                    $customer->setWebsiteId($websiteId)
+                            ->setStore($store)
+                            ->setFirstname($firstName)
+                            ->setLastname($lastName)
+                            ->setEmail($customerDetails->email)
+                            ->setPassword($customerDetails->email);
+                    $customer->save();
+
+                    $customerData = $customer->getDataModel();
+                    $customerData->setCustomAttribute('country_code', $countryCode);
+                    $customer->updateData($customerData);
+                    $customer->save();
+
+                    $customerId = $customer->getEntityId();
+                    // if you have allready buyer id then you can load customer directly
+                    $customer = $this->customerRepository->getById($customerId);
+
+                }
+                
+            } else {
+
+                $customer = $this->customerRepository->getById($customer->getEntityId());
+            }
+
+            $order->setCustomerFirstname($firstName);
+            $order->setCustomerLastname($lastName);
+            $order->setCustomerEmail($customerDetails->email);
+            $order->setCustomerId($customer->getId());
+            $order->setCustomerIsGuest(0);
+
+            if (!empty($orderData->delivery_address)) {
+
+                $deliveryAddress = $orderData->delivery_address;
+
+                if (!empty($deliveryAddress->name)) {
+
+                    $fName = $this->getFirstNameLastName($deliveryAddress->name);
+                    $lName = $this->getFirstNameLastName($deliveryAddress->name, 'last_name');
+
+                    $fullName = empty($fullName) ? $fName : $fullName;
+                    $firstName = empty($firstName) ? $fName : $firstName;
+                    $lastName  =  empty($firstName) ? $lName : $lastName;
+                }
+
+                $city = !empty($deliveryAddress->city) ? $deliveryAddress->city : $deliveryAddress->area;
+                
+                $country        = $deliveryAddress->country;
+                $city           = $city;
+                $state          = $deliveryAddress->province;
+                $address_2      = $deliveryAddress->area;
+                $address_1      = $deliveryAddress->address;
+                $lat            = $deliveryAddress->lat;
+                $long           = $deliveryAddress->long;
+                $postcode       = !empty($deliveryAddress->postal_code) ? $deliveryAddress->postal_code : $postcode;
+            }
+
+            // return Pakistan to PK or United Kingdom to UK//
+            $countryId = array_search($country, \Zend_Locale::getTranslationList('territory'));
+
+            $addresses = isset($customer) ? $customer->getAddresses() : [];
+
+            $saveInAddressBook = 1;
+
+            if (!empty($addresses)) {
+                foreach ($addresses as $key => $value) {
+
+                    $fName = $this->getFirstNameLastName($fullName);
+                    $lName = $this->getFirstNameLastName($fullName, 'last_name');
+                    $phoneNum = $this->bsecureHelper->phoneWithCountryCode($phone, $countryCode);
+                    // Check if Address already exists
+                    if ($value->getFirstname() == $fName
+                        && $value->getLastname() ==  $lName
+                         && $value->getTelephone() == $phoneNum
+                         && $value->getCity() == $city
+                         && $value->getCountryId() == $countryId
+                         && implode(" ", $value->getStreet()) == $address_1 .' '. $address_2) {
+                        $saveInAddressBook = 0;
+                        continue;
+                    }
+                }
+            }
+           
+            $shippingAddress = $order->getShippingAddress();
+            $billingAddress = $order->getBillingAddress();
+
+            $region = $this->getRegionCode($state);
+
+            if (!empty($shippingAddress)) {
+
+                $shippingAddress
+                ->setFirstname($firstName)
+                ->setLastname($lastName)
+                ->setStreet($address_1 .' '. $address_2)
+                ->setCity($city)
+                ->setCountry_id($countryId);
+                
+                if (!empty($region['region_id'])) {
+                    $shippingAddress->setRegionId($region['region_id']);
+                }
+
+                $shippingAddress->setPostcode($postcode)
+                ->setTelephone($phone)
+                ->setIsDefaultBilling('1')
+                ->setIsDefaultShipping('1')
+                ->setSaveInAddressBook('1')
+                ->setCustomerId($customer->getId())->save();
+            }
+
+            if (!empty($billingAddress)) {
+
+                $billingAddress
+                ->setFirstname($firstName)
+                ->setLastname($lastName)
+                ->setStreet($address_1 .' '. $address_2)
+                ->setCity($city)
+                ->setCountry_id($countryId);
+
+                if (!empty($region['region_id'])) {
+                    $billingAddress->setRegionId($region['region_id']);
+                }
+
+                $billingAddress->setPostcode($postcode)
+                ->setTelephone($phone)
+                ->setIsDefaultBilling('1')
+                ->setIsDefaultShipping('1')
+                ->setSaveInAddressBook('1')
+                ->setCustomerId($customer->getId())->save();
+
+            }
+
+            $addressInfo = [
+                            'first_name' => $firstName,
+                            'last_name' => $lastName,
+                            'street' => [$address_1 .' '. $address_2],
+                            'telephone' => $phone,//phpcs:ignore
+                            'city' => $city,
+                            'country_id' => $countryId,
+                            'postcode' => $postcode,
+                            'region_title' => $state,
+                            'default_shipping' => 1,
+                            'default_billing' => 1,
+                            'customer_id' => $customer->getId()
+                        ];
+
+            if (!empty($phone)) {
+
+                $addresses = $customer->getAddresses();
+
+                if (!empty($addresses)) {
+
+                    $billingAddressId = $customer->getDefaultBilling();
+
+                    $this->addUpdateAddress($addressInfo, $billingAddressId);
+
+                } else {
+
+                    $this->addUpdateAddress($addressInfo);
+                }
+            }
+            
+        }
+
+        $order->save();
+    }
+
+    public function addUpdateAddress($addressInfo, $addressId = 0)
+    {
+
+        if (!empty($addressId)) {
+            // Update Address
+            $address = $this->addressRepository->getById($addressId);
+        } else {
+            // Add new address for customer //
+            $address = $this->addressFactory->create();
+        }
+            
+        $address->setFirstname($addressInfo['first_name']);
+        $address->setLastname($this->getFirstNameLastName($addressInfo['last_name'], 'last_name'));
+        $address->setTelephone($addressInfo['telephone']);
+        $address->setStreet($addressInfo['street']);
+        $address->setCity($addressInfo['city']);
+        $address->setCountryId($addressInfo['country_id']);
+        $address->setPostcode($addressInfo['postcode']);
+        $region = $this->getRegionCode($addressInfo['region_title']);
+       
+        if (!empty($region['region_id'])) {
+            $address->setRegionId($region['region_id']);
+        }
+        
+        $address->setIsDefaultShipping($addressInfo['default_shipping']);
+        $address->setIsDefaultBilling($addressInfo['default_billing']);
+        $address->setCustomerId($addressInfo['customer_id']);
+        $this->addressRepository->save($address);
+    }
+
+    public function getRegionCode(string $region): array
+    {
+        $regionCode = $this->regionFactory->create()
+            ->addRegionNameFilter($region)
+            ->getLastItem()
+            ->toArray();
+
+        return $regionCode;
+    }
+
+    /*
+     * Use this function if payment gateway order type used
+     */
+    public function updateOrderPaymentGateway($order, $orderData)
+    {
+
+        $placementStatus   = $orderData->placement_status;
+        $orderState = $this->magentoOrderStatus($placementStatus);
+        $order->setState($orderState);
+        $order->setStatus($orderState);
+        $order->save();
+
+        // add Shipping //
+        $shippingPrice = 0;
+        $shippingMethod = 'freeshipping_freeshipping';
+        $shippingTitle = '';
+
+        // Collect Rates and Set Shipping & Payment Method
+        if (!empty($shipmentMethod)) {
+            if (!empty($shipmentMethod->cost)) {
+                $shippingMethod = 'flatrate_flatrate';
+
+                $shippingPrice = $shipmentMethod->cost;
+            }
+
+            if (!empty($shipmentMethod->name)) {
+                $shippingTitle = $shipmentMethod->name;
+            }
+        }
+
+        $allActiveShippings = $this->shippingConfig->getActiveCarriers();
+
+        // Check if bSecure Shipping is active
+        if (!empty($allActiveShippings['bsecureshipping'])) {
+            $shippingMethod = 'bsecureshipping_bsecureshipping';
+        }
+        
+        $quoteId = $order->getQuoteId();
+
+        if ($quoteId > 0) {
+
+            $quote = $this->quoteRepository->get($quoteId);
+
+            $shippingAddress = $quote->getShippingAddress();
+            $shippingAddress->setCollectShippingRates(true)
+                            ->collectShippingRates()
+                            ->setShippingMethod($shippingMethod);
+
+            if (!empty($shippingTitle)) {
+                    $shippingAddress->setShippingDescription($shippingTitle);
+            }
+        }
+
+        if (!empty($shippingPrice)) {
+
+            $order->setShippingAmount($shippingPrice);
+            $order->setBaseShippingAmount($shippingPrice);
+            if (!empty($shippingTitle)) {
+                $order->setShippingDescription($shippingTitle);
+            }
+
+            $order->setGrandTotal($order->getGrandTotal() + $shippingPrice); //adding shipping price to grand total
+            $order->save();
+        }
+        // add Shipping //
+
+        if (!empty($orderData->summary->discount_amount)) {
+
+            $order->setData('bsecure_discount', $orderData->summary->discount_amount);
+
+            $discount = $orderData->summary->discount_amount;
+            $subTotalAmount = $orderData->summary->sub_total_amount;
+            $totalAmount = $orderData->summary->total_amount;
+
+            $discount = $discount >= ($totalAmount) ? $totalAmount : $discount;
+
+            $order->setSubtotal($subTotalAmount)->setBaseSubtotal($subTotalAmount);
+            $order->setDiscountAmount($discount)->setBaseDiscountAmout($discount);
+            $order->setGrandTotal($totalAmount)->setBaseGrandTotal($totalAmount);
+            $order->setDiscountDescription(__("bSecure"));
+            $order->save();
+        }
+
+        if (!empty($orderData->summary->merchant_service_charges)) {
+
+            $order->setData('bsecure_service_charges', $orderData->summary->merchant_service_charges);
+
+            $subTotalAmount = $orderData->summary->sub_total_amount;
+            $totalAmount = $orderData->summary->total_amount;
+
+            $order->setSubtotal($subTotalAmount)->setBaseSubtotal($subTotalAmount);
+            $order->setGrandTotal($totalAmount)->setBaseGrandTotal($totalAmount);
+            $order->save();
+        }
+
+        if (!empty($orderData->payment_method->name)) {
+            $orderNotes = "Payment Method: ".$orderData->payment_method->name;
+            $cardDetails       = $orderData->card_details;
+
+            if (!empty($cardDetails->card_name) && !empty($cardDetails->card_type)) {
+                $orderNotes = "Card Type: ".$cardDetails->card_type.'<br>';
+                $orderNotes .= "Card Holder Name: ".$cardDetails->card_name.'<br>';
+                $orderNotes .= "Card Number: ".$cardDetails->card_number.'<br>';
+                $orderNotes .= "Card Expire: ".$cardDetails->card_expire;
+            }
+
+            $order->addStatusHistoryComment($orderNotes)
+            ->setIsCustomerNotified(false)
+            ->setEntityName('order');
+        }
+
+        $order->setData('bsecure_order_ref', $orderData->order_ref);
+        $order->setData('bsecure_order_type', strtolower($orderData->order_type));
+        $order->setData('bsecure_order_id', $orderData->merchant_order_id);
+        $this->_clearQuote();
+
+        return $order->getEntityId();
+    }
+
+    // Clear Cart //
+    public function _clearQuote()
+    {
+        $this->cart->truncate();
+        $this->cart->getQuote()->setTotalsCollectedFlag(false);
+        $this->cart->save();
     }
 }

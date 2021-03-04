@@ -57,6 +57,54 @@ class UpgradeSchema implements UpgradeSchemaInterface
                     ]
                 );
 
+            //Order table
+            $setup->getConnection()
+                ->addColumn(
+                    $setup->getTable($orderTable),
+                    'bsecure_service_charges',
+                    [
+                        'type' => \Magento\Framework\DB\Ddl\Table::TYPE_DECIMAL,
+                        'length' => '20,4',
+                        'comment' =>'bSecure Service Charges'
+                    ]
+                );
+
+             //Order table
+            $setup->getConnection()
+                ->addColumn(
+                    $setup->getTable($orderTable),
+                    'bsecure_discount',
+                    [
+                        'type' => \Magento\Framework\DB\Ddl\Table::TYPE_DECIMAL,
+                        'length' => '20,4',
+                        'comment' =>'bSecure Discount'
+                    ]
+                );
+
+            //Quote table
+            $setup->getConnection()
+                ->addColumn(
+                    $setup->getTable('quote'),
+                    'bsecure_service_charges',
+                    [
+                        'type' => \Magento\Framework\DB\Ddl\Table::TYPE_DECIMAL,
+                        'length' => '20,4',
+                        'comment' =>'bSecure Service Charges'
+                    ]
+                );
+
+             //Quote table
+            $setup->getConnection()
+                ->addColumn(
+                    $setup->getTable('quote'),
+                    'bsecure_discount',
+                    [
+                        'type' => \Magento\Framework\DB\Ddl\Table::TYPE_DECIMAL,
+                        'length' => '20,4',
+                        'comment' =>'bSecure Discount'
+                    ]
+                );
+
             //Order Grid table
             $setup->getConnection()
                 ->addColumn(

@@ -56,14 +56,19 @@ class Minicart extends \Magento\Framework\View\Element\Template
             'show_checkout_btn'
         );
 
+        $checkoutBtnUrl = $this->getBsecureSettings(
+            'bsecure_checkout_btn_url'
+        );
+
+        $checkoutBtnUrl = !empty($checkoutBtnUrl) ? $checkoutBtnUrl.'?v='.random_int(0, 100000000) :
+                          $this->assetRepo->getUrl($this->bsecureHelper::BTN_BUY_WITH_BSECURE);
+
         if ($showCheckoutBtn == $this->bsecureHelper::BTN_SHOW_BSECURE_BOTH && $moduleEnabled) {
                          
             $bsecureCheckoutBtn = '<a href="javascript:;" class="minicart-area bsecure-checkout-button">';
             $bsecureCheckoutBtn .= '<img data-role="proceed-to-checkout" title="'.$title.'"';
             $bsecureCheckoutBtn .= 'alt="'.$title.'" class="primary checkout"';
-            $bsecureCheckoutBtn .= 'src="'.
-                                    $this->assetRepo->getUrl($this->bsecureHelper::BTN_BUY_WITH_BSECURE).
-                                        '" /></a>';
+            $bsecureCheckoutBtn .= 'src="'.$checkoutBtnUrl.'" /></a>';
 
         }
 

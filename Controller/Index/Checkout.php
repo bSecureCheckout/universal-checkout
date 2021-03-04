@@ -95,6 +95,14 @@ class Checkout extends \Magento\Framework\App\Action\Action
                 if (!empty($validateOrderData['status'])) {
                     return $this->getResponse()->setBody(__('Error: '.$validateOrderData['msg']));
                 } else {
+
+                    if (!empty($orderData->placement_status)) {
+                        if ($orderData->placement_status == 2 || $orderData->placement_status == 1) {
+                            $this->messageManager->addError(__("Sorry! Your order has not been proccessed."));
+                            $this->_redirect('checkout/cart');
+                        }
+                    }
+
                     $orderId = $this->orderHelper->createMagentoOrder($orderData);
 
                     if (!empty($orderId)) {

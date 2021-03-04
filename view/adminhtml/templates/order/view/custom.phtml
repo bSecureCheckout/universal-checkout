@@ -1,10 +1,12 @@
 <?php
 
 $order = $block->getOrder();
+$bSecureOrderLink = $block->getBsecureOrderLink($order);
 
-$payment = $order->getPayment();
-$additionalData = $payment->getAdditionalInformation();
+$bsecureOrderId = $order->getData("bsecure_order_id");
+$bsecureOrderRef = $order->getData("bsecure_order_ref");
     
-if (!empty($additionalData['_bsecure_order_id'])) { ?>
-   <h2>bSecure Order ID: <?= $block->escapeHtmlAttr($additionalData['_bsecure_order_id']); ?></h2>
+if (!empty($bsecureOrderId) && !empty($bsecureOrderRef)) { ?>
+   <h2><a href="<?= $block->escapeJsQuote($bSecureOrderLink); ?>" 
+       target="_blank"><?= $block->escapeHtmlAttr(__('View order on bSecure')); ?></a></h2>
 <?php }

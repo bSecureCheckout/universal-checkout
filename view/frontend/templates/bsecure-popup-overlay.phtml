@@ -21,8 +21,11 @@ if ($moduleEnabled) {  ?>
                     <p><?= $block->escapeHtmlAttr(__("No longer see the bSecure window?")); ?>'</p>
                 <a class="" href="javascript:focusBsecureWindow();"><?= $block->escapeHtmlAttr(__("Click Here")) ?></a>
         </div>
-
-        <div class="bsecure-popup-loader" style="display:none;">
+        <?php
+            $hosted = $block->isHostedWindow();
+            $display = ($hosted) ? 'block' : 'none';
+        ?>
+        <div class="bsecure-popup-loader" style="display:<?= $block->escapeHtmlAttr($display); ?>;">
             <img src="<?=
             $block->escapeHtmlAttr($block->getViewFileUrl(
                 'Bsecure_UniversalCheckout::images/ajax-loader-large.gif'

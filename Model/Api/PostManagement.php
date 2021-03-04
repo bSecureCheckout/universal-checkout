@@ -138,33 +138,47 @@ class PostManagement implements PostManagementInterface
         if (!empty($validateOrderData['status'])) {
             $returnRersult = $validateOrderData;
         } else {
-            $orderId = $this->orderHelper->createMagentoOrder($orderData);
 
-            if ($orderId > 0) {
-                $order = $this->orderRepository->get($orderId);
+            if (!empty($orderData->placement_status)) {
 
-                $bsecureOrderId = $order->getData('bsecure_order_id');
-                
-                $returnRersult = [
-                                    'status' => true,
-                                    'msg' => __("Order added successfully at magento."),
-                                    'bsecure_order_id' => $bsecureOrderId
-                                ];
+                if ($orderData->placement_status == 2) {
 
-                if ($order->getStatus() == \Magento\Sales\Model\Order::STATE_CANCELED) {
+                    $msg = __("Sorry! Your order has not been proccessed.");
                     $returnRersult = [
-                                        'status' => true,
-                                        'msg' => __("Sorry! Your order has been ".$order->getStatus()),
-                                        'bsecure_order_id' => $bsecureOrderId
-                                    ];
-                }
-
-            } else {
-                $msg = __("Unable to create order at magento. Please contact administrator or retry");
-                $returnRersult = [
                                     'status' => false,
                                     'msg' => __($msg)
                                 ];
+                }
+            } else {
+
+                $orderId = $this->orderHelper->createMagentoOrder($orderData);
+
+                if ($orderId > 0) {
+                    $order = $this->orderRepository->get($orderId);
+
+                    $bsecureOrderId = $order->getData('bsecure_order_id');
+                    
+                    $returnRersult = [
+                                        'status' => true,
+                                        'msg' => __("Order added successfully at magento."),
+                                        'bsecure_order_id' => $bsecureOrderId
+                                    ];
+
+                    if ($order->getStatus() == \Magento\Sales\Model\Order::STATE_CANCELED) {
+                        $returnRersult = [
+                                            'status' => true,
+                                            'msg' => __("Sorry! Your order has been ".$order->getStatus()),
+                                            'bsecure_order_id' => $bsecureOrderId
+                                        ];
+                    }
+
+                } else {
+                    $msg = __("Unable to create order at magento. Please contact administrator or retry");
+                    $returnRersult = [
+                                        'status' => false,
+                                        'msg' => __($msg)
+                                    ];
+                }
             }
         }
         

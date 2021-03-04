@@ -44,7 +44,24 @@
                     <comment>You can find this client secret from bSecure portal. https://partner.bsecure.pk/integration-live</comment>
                     </field>
             </group>
+             
         </section>
+
+        <section id="universalcheckout2" translate="label" sortOrder="140" showInDefault="1" showInWebsite="1" showInStore="1">
+            <class>separator-top</class>
+            <label>Advance Settings</label>
+            <tab>bsecure</tab>
+            <resource>Bsecure_UniversalCheckout::universalcheckout_config</resource>
+            
+             <group id="general2" translate="label" sortOrder="15" showInDefault="1" showInWebsite="1" showInStore="0">
+                <label>Advance Settings</label>
+                <field id="bsecure_payment_gateway" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Enable bSecure as Payment Gateway.</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                
+            </group>
+        </section>       
 
         <section id="carriers" translate="label" type="text" sortOrder="320" showInDefault="1" showInWebsite="1" showInStore="1">
             <group id="bsecureshipping" translate="label" type="text" sortOrder="0" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -102,6 +119,10 @@
                         <label>Enable</label>
                         <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                     </field>
+                    <field id="title" translate="label" sortOrder="10" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Title</label>                       
+                    </field>
+
                 </group>
         </section>
     </system>

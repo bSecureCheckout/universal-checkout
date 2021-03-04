@@ -145,9 +145,9 @@ class BsecureLogin extends \Magento\Framework\App\Action\Action
                        if (!empty($addresses)) {
                            $billingAddressId = $customer->getDefaultBilling();
 
-                           $this->addUpdateAddress($addressInfo, $billingAddressId);
+                           $this->orderHelper->addUpdateAddress($addressInfo, $billingAddressId);
                        } else {
-                           $this->addUpdateAddress($addressInfo);
+                           $this->orderHelper->addUpdateAddress($addressInfo);
                        }
                    }
 
@@ -298,45 +298,5 @@ class BsecureLogin extends \Magento\Framework\App\Action\Action
         $customerData->setCustomAttribute('bsecure_user_account_email', $userData['email']);
         $customer->updateData($customerData);
         $customer->save();
-    }
-
-    public function addUpdateAddress($addressInfo, $addressId = 0)
-    {
-
-        if (!empty($addressId)) {
-            // Update Address
-            $address = $this->addressRepository->getById($addressId);
-        } else {
-            // Add new address for customer //
-            $address = $this->addressFactory->create();
-        }
-            
-        $address->setFirstname($addressInfo['first_name']);
-        $address->setLastname($this->orderHelper->getFirstNameLastName($addressInfo['last_name'], 'last_name'));
-        $address->setTelephone($addressInfo['telephone']);
-        $address->setStreet($addressInfo['street']);
-        $address->setCity($addressInfo['city']);
-        $address->setCountryId($addressInfo['country_id']);
-        $address->setPostcode($addressInfo['postcode']);
-        $region = $this->getRegionCode($addressInfo['region_title']);
-       
-        if (!empty($region['region_id'])) {
-            $address->setRegionId($region['region_id']);
-        }
-        
-        $address->setIsDefaultShipping($addressInfo['default_shipping']);
-        $address->setIsDefaultBilling($addressInfo['default_billing']);
-        $address->setCustomerId($addressInfo['customer_id']);
-        $this->addressRepository->save($address);
-    }
-
-    public function getRegionCode(string $region): array
-    {
-        $regionCode = $this->regionCollectionFactory->create()
-            ->addRegionNameFilter($region)
-            ->getLastItem()
-            ->toArray();
-
-        return $regionCode;
     }
 }

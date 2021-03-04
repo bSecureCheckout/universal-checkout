@@ -38,7 +38,7 @@ class BsecureCustomColumn extends Column
                 
                    $order  = $this->_order->load($orderId);
                    $bsecureOrderId = $order->getData("bsecure_order_id");
-                $item['bsecure_order_id'] = $bsecureOrderId;
+                //$item['bsecure_order_id'] = $bsecureOrderId;
             }
         }
 

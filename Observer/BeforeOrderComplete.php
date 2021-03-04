@@ -1,0 +1,180 @@
+<?php
+
+namespace Bsecure\UniversalCheckout\Observer;
+
+use Magento\Sales\Model\Order;
+
+class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
+{
+
+    public function __construct(
+        \Magento\Framework\Registry $registry,
+        \Magento\Framework\App\Action\Context $context,
+        \Magento\Store\Model\StoreManagerInterface $storeManager,
+        \Magento\Checkout\Model\Session $checkoutSession,
+        \Magento\Customer\Model\Session $customerSession,
+        \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository,
+        \Bsecure\UniversalCheckout\Helper\Data $bsecureHelper,
+        \Bsecure\UniversalCheckout\Helper\OrderHelper $orderHelper,
+        \Magento\Framework\Message\ManagerInterface $messageManager
+    ) {
+
+        $this->_storeManager = $storeManager;
+        $this->checkoutSession = $checkoutSession;
+        $this->customerSession = $customerSession;
+        $this->customerRepository = $customerRepository;
+        $this->registry = $registry;
+        $this->bsecureHelper = $bsecureHelper;
+        $this->orderHelper = $orderHelper;
+        $this->messageManager = $messageManager;
+    }
+
+    public function execute(\Magento\Framework\Event\Observer $observer)
+    {
+        $order = $observer->getEvent()->getOrder();
+        $orderIncrementId = $order->getIncrementId();
+
+        $quote = $this->checkoutSession->getQuote();
+        $orderId = $this->checkoutSession->getLastOrderId();
+       
+        $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+        //$order = $objectManager->create('\Magento\Sales\Model\Order') ->load($orderId);
+        $payment = $quote->getPayment();
+
+        $method = $payment->getMethodInstance();
+        $methodTitle = $method->getTitle();
+
+        //$order_data= $order->getData();
+        $status = $this->checkoutSession->getLastOrderStatus();
+
+        if ($methodTitle == 'bSecure Payment' && $quote->getCustomerEmail() != 'guest@example.com') {
+           
+            $requestData = $this->getOrderPayLoad($quote, $orderIncrementId);
+
+            $response = $this->sendPaymentRequestBsecure($requestData);
+
+            if (!empty($response->order_reference)) {
+
+                $details =  [
+                            '_bsecure_order_ref' => $response->order_reference,
+                            '_bsecure_order_type' => 'before_payment_gateway',
+                            '_bsecure_order_id' => $orderIncrementId,
+                            '_bsecure_order_checkout_url' => $response->checkout_url
+                            
+                        ];
+            
+                $additionalData = $payment->getAdditionalInformation();
+                $newAdditionalData = !empty($additionalData) ? array_merge($additionalData, $details) : $details;
+                $payment->setAdditionalInformation($newAdditionalData);
+                $payment->save();
+
+            }
+        }
+    }
+
+    private function getOrderPayLoad($quote, $orderIncrementId)
+    {
+
+        $shippingAddress = $quote->getShippingAddress();
+        $billingAddress = $quote->getBillingAddress();
+
+        $billingFirstName = $billingAddress->getFirstname();
+        $billingLastName = $billingAddress->getLastname();
+        $billingEmail = $billingAddress->getEmail();
+        $billingPhone = $billingAddress->getTelephone();
+        $billingCountry = $billingAddress->getCountryId();
+        $billingCity = $billingAddress->getCity();
+        $billingState = $billingAddress->getState();
+        $billingAdress = $billingAddress->getStreet();
+       
+        $customerName = trim($billingFirstName. ' ' .$billingLastName);
+        $authCode = "";
+        $countryCode = "";
+
+        if ($this->customerSession->isLoggedIn()) {
+
+            $customerId = $this->customerSession->getCustomer()->getId();
+            $customerData = $this->customerRepository->getById($customerId);
+            $countryCode = $customerData->getCustomAttribute('country_code')->getValue();
+            $authCode = $customerData->getCustomAttribute('bsecure_auth_code')
+                              ->getValue();
+            $userPhone = $this->customerSession->getCustomer()->getPhone();
+            $billingPhone = !empty($billingPhone) ? $billingPhone : $userPhone;
+        }
+
+        $orderData = [
+            "order_id" => $orderIncrementId,
+            "currency" => $quote->getQuoteCurrencyCode(),
+            "sub_total_amount" => floatval($quote->getSubtotal()),
+            "discount_amount" => floatval($quote->getDiscountAmount()),
+            "total_amount" => floatval($quote->getGrandTotal()),
+            "customer" => [
+
+                "auth_code" => $authCode,
+                "name" => $customerName,
+                "email" => $billingEmail,
+                "country_code" => $countryCode,
+                "phone_number" =>  $billingPhone
+            ],
+            "customer_address" => [
+                "country" => $billingCountry,
+                "city" => $billingCity,
+                "address" => implode(",", $billingAdress),
+                "province" => $billingState,
+                "area" => '',
+            ],
+            "customer_address_id" => 0
+        ];
+
+        return  $orderData;
+    }
+
+    private function sendPaymentRequestBsecure($requestData)
+    {
+
+        $response = $this->bsecureHelper->bsecureGetOauthToken();
+    
+        $validateResponse = $this->bsecureHelper->validateResponse($response, 'token_request');
+
+        if ($validateResponse['error']) {
+                
+            $this->messageManager->addError($validateResponse['msg']);
+            return false;
+
+        } else {
+
+            $headers =  ['Authorization' => 'Bearer '.$response->access_token];
+
+            $params =   [
+                            'method' => 'POST',
+                            'body' => $requestData,
+                            'headers' => $headers,
+
+                        ];
+
+            $config =  $this->bsecureHelper->getBsecureConfig();
+            $createPaymentGatewayOrder = !empty($config->createPaymentGatewayOrder) ?
+                                         $config->createPaymentGatewayOrder : "";
+
+            $response = $this->bsecureHelper->bsecureSendCurlRequest($createPaymentGatewayOrder, $params);
+
+            $validateResponse = $this->bsecureHelper->validateResponse($response);
+
+            if ($validateResponse['error']) {
+                
+                $this->messageManager->addError($validateResponse['msg']);
+                return false;
+
+            } else {
+
+                if (!empty($response->body)) {
+
+                    return $response->body;
+                }
+            }
+
+        }
+
+        return false;
+    }
+}
