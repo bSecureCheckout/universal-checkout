@@ -49,9 +49,9 @@ class Sidebar extends Template
         return $this->bsecureHelper;
     }
 
-    public function getBsecureSettings($key)
+    public function getBsecureSettings($key, $path = 'universalcheckout/general/')
     {
-        return $this->bsecureHelper->getConfig('universalcheckout/general/'.$key);
+        return $this->bsecureHelper->getConfig($path.$key);
     }
 
     public function getCartCount()
@@ -81,7 +81,7 @@ class Sidebar extends Template
         $checkoutBtnUrl = !empty($checkoutBtnUrl) ? $checkoutBtnUrl.'?v='.random_int(0, 100000000) :
                           $this->assetRepo->getUrl($this->bsecureHelper::BTN_BUY_WITH_BSECURE);
 
-        if ($showCheckoutBtn == $this->bsecureHelper::BTN_SHOW_BSECURE_BOTH && $moduleEnabled) {
+        if ($moduleEnabled) {
                          
             $bsecureCheckoutBtn = '<a href="javascript:;" class="minicart-area bsecure-checkout-button">';
             $bsecureCheckoutBtn .= '<img data-role="proceed-to-checkout" title="'.$title.'"';

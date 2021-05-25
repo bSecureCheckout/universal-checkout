@@ -117,12 +117,13 @@ class Checkout extends \Magento\Framework\App\Action\Action
 
                         $this->_clearQuote();
 
-                        $this->_redirect('checkout/onepage/success');
-
                         if ($order->getStatus() == \Magento\Sales\Model\Order::STATE_CANCELED) {
                             $this->messageManager->addError(__("Sorry! Your order has been ".$order->getStatus()));
                             $this->_redirect('checkout/cart');
                         }
+
+                        $this->_redirect('checkout/onepage/success');
+
                     } else {
                         $this->messageManager->addError(__("Unable to create order at this moment please try again."));
                         $this->_redirect('checkout/cart');
@@ -137,6 +138,7 @@ class Checkout extends \Magento\Framework\App\Action\Action
     {
         $this->cart->truncate();
         $this->cart->getQuote()->setTotalsCollectedFlag(false);
+         $this->cart->getQuote()->setIsActive(0);
         $this->cart->save();
     }
 }

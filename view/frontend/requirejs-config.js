@@ -2,8 +2,22 @@
 * bSecure
 */
 
+
 var config = {
     paths: {
-        //"bsecureFront": "Bsecure_UniversalCheckout/js/bsecure-front"
+        "intlTelInput": 'Bsecure_UniversalCheckout/js/intlTelInput',
+        "intlTelInputUtils": 'Bsecure_UniversalCheckout/js/utils',
+        "internationalTelephoneInput": 'Bsecure_UniversalCheckout/js/internationalTelephoneInput'
+    },
+
+    shim: {
+        'intlTelInput': {
+            'deps':['jquery', 'knockout']
+        },
+        'internationalTelephoneInput': {
+            'deps':['jquery', 'intlTelInput']
+        }
     }
-}
+    
+    
+};

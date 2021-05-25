@@ -1,0 +1,44 @@
+<?php
+
+/** @var $block \Bsecure\UniversalCheckout\Block\Checkout */
+/** @var \Magento\Checkout\Block\Onepage\Link $link */
+
+if ($block->getOnePageLink()->isPossibleOnepageCheckout()):
+    $bsecureHelper      = $block->getBsecureHelper();
+    $title = $block->
+             getBsecureSettings('bsecure_title');
+    $moduleEnabled = $block->
+                     getBsecureSettings('enable');
+    $showCheckoutBtn =  $block->
+                        getBsecureSettings('show_checkout_btn');
+    $checkoutBtnUrl =  $block->
+                        getBsecureSettings('bsecure_checkout_btn_url');
+
+    $checkoutBtnUrl = !empty($checkoutBtnUrl) ? $checkoutBtnUrl.'?v='.random_int(0, 100000000) :
+                      $block->escapeHtmlAttr(
+                          $block->getViewFileUrl($bsecureHelper::BTN_BUY_WITH_BSECURE)
+                      );
+    $isDisplayCheckoutPg = $block->
+                        getBsecureSettings('is_display_at_checkout_pg', 'universalcheckout2/general2/');
+
+    if ($moduleEnabled && $isDisplayCheckoutPg &&
+        ($showCheckoutBtn == $bsecureHelper::BTN_SHOW_BSECURE_ONLY
+         || $showCheckoutBtn == $bsecureHelper::BTN_SHOW_BSECURE_BOTH)) {
+        
+        ?>
+          <div class="bsecure-checkout-button-wrapper" style="display: none;">
+            <a href="javascript:;" class="bsecure-checkout-button">
+              <img data-role="proceed-to-checkout"
+              title="<?=  $block->escapeHtmlAttr(__($title)); ?>"
+              alt="<?=  $block->escapeHtmlAttr(__($title)); ?>"           
+              class="primary checkout bsecure-btn-checkout-pg"
+              src="<?= $block->escapeJsQuote($checkoutBtnUrl); ?>"
+              />
+            </a>            
+          </div>
+        <?php
+    } ?>
+        
+
+    <?php
+endif;?>

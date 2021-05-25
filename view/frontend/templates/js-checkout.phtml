@@ -1,0 +1,19 @@
+<?php
+/**
+ * @var $block  Bsecure\UniversalCheckout\Block\PhoneNumber
+ */
+?>
+
+<script type="application/javascript">
+    require([
+        'jquery',
+        'intlTelInput'
+    ], function ($) {
+        maxMageTelephoneRenderComplete = function() {
+
+            $("input[name='telephone']").intlTelInput(
+                <?= $block->escapeJsQuote($block->phoneConfig()); ?>
+                )
+        }
+    });
+</script>

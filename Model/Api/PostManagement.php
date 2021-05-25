@@ -76,6 +76,18 @@ class PostManagement implements PostManagementInterface
 
         $productStock = $this->stockRegistry->getStockItem($product->getId());
         $productIsInStock = $productStock->getIsInStock();
+        $isSalable = $product->isSalable();
+
+        if (! $isSalable) {
+
+            $returnRersult = [
+                                'status' => false,
+                                "msg" => __("Product is not salable"),
+                                'product_details' => []
+                            ];
+            http_response_code(422);
+            return json_encode($returnRersult);
+        }
 
         if (! $productIsInStock) {
 
@@ -139,16 +151,14 @@ class PostManagement implements PostManagementInterface
             $returnRersult = $validateOrderData;
         } else {
 
-            if (!empty($orderData->placement_status)) {
+            if ($orderData->placement_status == 2) {
 
-                if ($orderData->placement_status == 2) {
-
-                    $msg = __("Sorry! Your order has not been proccessed.");
-                    $returnRersult = [
-                                    'status' => false,
-                                    'msg' => __($msg)
-                                ];
-                }
+                $msg = __("Sorry! Your order has not been proccessed.");
+                $returnRersult = [
+                                'status' => false,
+                                'msg' => __($msg)
+                            ];
+                
             } else {
 
                 $orderId = $this->orderHelper->createMagentoOrder($orderData);

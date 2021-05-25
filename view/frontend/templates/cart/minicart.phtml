@@ -68,12 +68,26 @@
         
           if (cartInfo['summary_count'] > 0) {
               if (jQuery(".bsecure-minicart-btn-wrapper")
-                .find(".minicart-area.bsecure-checkout-button").length == 0 ) {                
+                .find(".minicart-area.bsecure-checkout-button").length == 0 ) {
                 // handle bSecure checkout btn in minicart
                 setTimeout(function(){ 
                   jQuery(".bsecure-minicart-btn-wrapper").html('<?= $block->escapeJsQuote($checkoutBtn, '\\'); ?>'); 
                 }, 500);
               }
+
+              <?php
+
+                if ($showCheckoutBtn == $bsecureHelper::BTN_SHOW_BSECURE_ONLY && $moduleEnabled) {
+                  
+                    ?>
+                  setTimeout(function(){                   
+                    jQuery(".primary #top-cart-btn-checkout").hide();
+                }, 3000);
+
+                    <?php
+                }
+
+                ?>
             }
         }, this);
     });

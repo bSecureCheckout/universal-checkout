@@ -63,7 +63,8 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Checkout\Model\Session $checkoutSession,
         OrderRef $orderRef,
         CartRepositoryInterface $quoteRepository,
-        \Magento\Directory\Model\ResourceModel\Region\CollectionFactory $regionFactory
+        ///\Magento\Directory\Model\ResourceModel\Region\CollectionFactory $regionFactory
+        \Magento\Directory\Model\Region $regionFactory
     ) {
         $this->storeManager         = $storeManager;
         $this->product              = $product;
@@ -111,7 +112,8 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function createMagentoOrder($orderData)
     {
-
+        //var_dump($orderData); die;
+        
         $bsecureOrderRef  = $orderData->order_ref;
         $placementStatus   = $orderData->placement_status;
         $paymentStatus     = $orderData->payment_status;
@@ -140,12 +142,13 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $lat            = "";
         $long           = "";
         $customerId    = null;
+        $customer       = [];
 
         $orderExists = $this->getMagentoOrderByBsecureRefId($bsecureOrderRef);
        
         if (!empty($orderExists)) {
 
-            $orderState = $this->magentoOrderStatus($placementStatus);
+            $orderState = $this->magentoOrderStatus($placementStatus, $paymentStatus);
             $orderExists->setState($orderState);
             $orderExists->setStatus($orderState);
             $orderExists->save();
@@ -255,10 +258,12 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
             foreach ($orderData->items as $key => $value) {
                //We then need to use $forceReload = true the last param for multiple products to avoid cached products
                 if (!empty($value->product_id)) {
-                        $product =  $this->productRepository->getById($value->product_id);
+                        $product =  $this->product->load($value->product_id);
                         $productId = $product->getId();
+                        
                 } elseif ($value->product_sku) {
-                        $product = $this->productRepository->get($value->product_sku, false, $storeId, true);
+                        $product = $this->product->load($this->product->getIdBySku($value->product_sku));
+
                         $productId = $product->getId();
                 } else {
                         return false;
@@ -266,8 +271,10 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
 
                 if (!empty($productId)) {
                     $productCounts++;
-                    $productQty = (int) $value->product_qty;
+                    $productQty =  !empty($value->product_qty) ? (int) $value->product_qty : 1;
+                    $product =  $this->product->load($productId);
                     $quote->addProduct($product, $productQty);
+                    
                 }
             }
 
@@ -325,7 +332,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                 }
             }
 
-            $shipping_address = [
+            $shippingAddressData = [
                                 'firstname' => $this->getFirstNameLastName($fullName), //address Details
                                 'lastname'  => $this->getFirstNameLastName($fullName, 'last_name'),
                                 'street'    => $address_1 .' '. $address_2,
@@ -345,8 +352,8 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                             ];
 
             //Set Address to quote
-            $quote->getBillingAddress()->addData($shipping_address);
-            $quote->getShippingAddress()->addData($shipping_address);
+            $quote->getBillingAddress()->addData($shippingAddressData);
+            $quote->getShippingAddress()->addData($shippingAddressData);
         }
         
         $shippingPrice = 0;
@@ -412,7 +419,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         
         $order->save();
 
-        $orderState = $this->magentoOrderStatus($placementStatus);
+        $orderState = $this->magentoOrderStatus($placementStatus, $paymentStatus);
        
         $order->setState($orderState);
         $order->setStatus($orderState);
@@ -450,7 +457,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
             $totalAmount = $orderData->summary->total_amount;
 
             $discount = $discount >= ($totalAmount) ? $totalAmount : $discount;
-
+            
             $order->setSubtotal($subTotalAmount)->setBaseSubtotal($subTotalAmount);
             $order->setDiscountAmount($discount)->setBaseDiscountAmout($discount);
             $order->setGrandTotal($totalAmount)->setBaseGrandTotal($totalAmount);
@@ -525,16 +532,19 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                     ]; //phpcs:ignore
         } else {
             $productId = 0;
+            $msg = __("No product found in store");
             foreach ($orderData->items as $key => $value) {
                 // @codingStandardsIgnoreStart
                 if (!empty($value->product_id)) {
-                    $product =  $this->productRepository->getById($value->product_id);
+                    $product =  $this->product->load($value->product_id);
                     $productId = $product->getId();
 
                     if (empty($productId)) {
                         $msg =  __("No product found in store against product_id: ") . $value->product_id;
                     }
-                } elseif (!empty($value->product_sku)) {
+                }
+
+                if (!empty($value->product_sku)) {
                     $productId = $this->product->load($this->product->getIdBySku($value->product_sku));
 
                     if (empty($productId)) {
@@ -569,7 +579,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
     /*
     * Map bSecure statuses with magento default statuses
     */
-    public function magentoOrderStatus($placementStatus)
+    public function magentoOrderStatus($placementStatus, $paymentStatus = 0)
     {
         $orderStatus = \Magento\Sales\Model\Order::STATE_PROCESSING;
         $placementStatus = (int) $placementStatus;
@@ -581,6 +591,9 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                 break;
             case 3:
                 $orderStatus = \Magento\Sales\Model\Order::STATE_PROCESSING;
+                /*if ($paymentStatus == 1) {
+                    $orderStatus = \Magento\Sales\Model\Order::STATE_COMPLETE;
+                }*/
                 break;
             case 4:
                 $orderStatus = \Magento\Sales\Model\Order::STATE_HOLDED;
@@ -737,17 +750,32 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
 
         if ($this->customerSession->isLoggedIn()) {
             $customerId = $this->customerSession->getCustomer()->getId();
-
             $customer = $this->customerRepository->getById($customerId);
             $billingAddressId = $customer->getDefaultBilling();
             $shippingAddressId = $customer->getDefaultShipping();
-
-            //get default billing address
-            $billingAddress = $this->addressRepository->getById($billingAddressId);
+            $telephone = "";
+            $countryCode = "";
+            $bsecureAuthCode = "";
             
-            $countryCode = $customer->getCustomAttribute('country_code')->getValue();
-            $bsecureAuthCode = $customer->getCustomAttribute('bsecure_auth_code')->getValue();
-            $telephone =  $this->bsecureHelper->phoneWithoutCountryCode($billingAddress->getTelephone());
+            if (!empty($customer->getCustomAttribute('country_code'))) {
+                 $countryCode = $customer->getCustomAttribute('country_code')
+                              ->getValue();
+            }
+
+            if (!empty($customer->getCustomAttribute('bsecure_auth_code'))) {
+                 $bsecureAuthCode = $customer->getCustomAttribute('bsecure_auth_code')
+                              ->getValue();
+            }
+
+            if (!empty($billingAddressId)) {
+                //get default billing address
+                $billingAddress = $this->addressRepository->getById($billingAddressId);
+                $telephone =  $this->bsecureHelper->phoneWithoutCountryCode(
+                    $billingAddress->getTelephone(),
+                    $countryCode
+                );
+            }
+
             $customerData = [
                             'name' => $this->customerSession->getCustomer()->getName(),
                             'email' => $this->customerSession->getCustomer()->getEmail(),
@@ -845,6 +873,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         // Get quantity of product.
         $productQty = $productStock->getQty();
         $productIsInStock = $productStock->getIsInStock();
+        $isSalable = $product->isSalable();
         $specialPrice = !empty(($specialPrice)) ? floatval($specialPrice) : floatval($regularPrice);
         $shortDescription = $product->getShortDescription();
         $productDescription = $product->getDescription();
@@ -860,6 +889,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                             'description' => $this->escaper->escapeHtml($productDescription), //phpcs:ignore
                             'stock_quantity' => $productQty,
                             'is_in_stock' => $productIsInStock,
+                            'is_salable' => $isSalable,
                             'product_type' => $product->getTypeId()
                         ];
 
@@ -922,26 +952,69 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
     {
 
         $quote = $this->checkoutSession->getQuote();
+        $firstName = "Guest First Name";
+        $lastName = "Guest Last Name";
+        $customerEmail = "guest@example.com";
+        $isGuest = true;
+        $countryId = "PK";
+        $street = "H# L300";
+        $city = "Karachi";
+        $region = "Sindh";
+        $postCode = "75000";
+        $telephone = "03331234567";
+        $regionId = $this->getRegionCode($region, $countryId);
 
-        $quote->setCustomerFirstname("Guest First Name");
-        $quote->setCustomerLastname("Guest Last Name");
-        $quote->setCustomerEmail("guest@example.com");
-        $quote->setCustomerIsGuest(true);
+        if ($this->customerSession->isLoggedIn()) {
+            $customerId = $this->customerSession->getCustomer()->getId();
+            $customer = $this->customerRepository->getById($customerId);
+
+            //$billingAddressId = $customer->getDefaultBilling();
+            $shippingAddressId = $customer->getDefaultShipping();
+            $countryCode = "";
+
+            if (!empty($shippingAddressId)) {
+
+                if (!empty($customer->getCustomAttribute('country_code'))) {
+                    $countryCode = $customer->getCustomAttribute('country_code')
+                                  ->getValue();
+                }
+                //get default billing address
+                $shippingAddress = $this->addressRepository->getById($shippingAddressId);
+                $telephone =  $this->bsecureHelper->phoneWithoutCountryCode(
+                    $shippingAddress->getTelephone(),
+                    $countryCode
+                );
+
+                $firstName = $shippingAddress->getFirstname();
+                $lastName = $shippingAddress->getLastname();
+                $customerEmail = $customer->getEmail();
+                $countryId = $shippingAddress->getCountryId();
+                $street = $shippingAddress->getStreet();
+                $city = $shippingAddress->getCity();
+                $postCode = $shippingAddress->getPostcode();
+                $region = $shippingAddress->getRegion()->getRegion();
+                $regionId = $shippingAddress->getRegionId();
+            }
+        }
+
+        $quote->setCustomerFirstname($firstName);
+        $quote->setCustomerLastname($lastName);
+        $quote->setCustomerEmail($customerEmail);
+        $quote->setCustomerIsGuest($isGuest);
 
         $shipping_address = [
-                            'firstname' => "Guest First Name", //address Details
-                            'lastname'  => "Guest Last Name",
-                            'street'    => "H# L300",
-                            'city'      => "Karachi",
-                            'country_id'=> "PK",
-                            'region'    => "Sindh",
-                            'postcode'  => "75000",
-                            'telephone' => "03331234567",
-                            'gender'    => "Male",
-                            'save_in_address_book' => 0,
-                            
+                            'firstname' => $firstName, //address Details
+                            'lastname'  => $lastName,
+                            'street'    => $street,
+                            'city'      => $city,
+                            'country_id'=> $countryId,
+                            'region'    => $region,
+                            'region_id' => $regionId,
+                            'postcode'  => $postCode,
+                            'telephone' => $telephone,
+                            'save_in_address_book' => 0
                         ];
-
+        
         //Set Address to quote
         $quote->getBillingAddress()->addData($shipping_address);
         $quote->getShippingAddress()->addData($shipping_address);
@@ -988,6 +1061,18 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
  
         // Collect Totals & Save Quote
         $quote->collectTotals()->save();
+
+        //----------------- set order type in quote payment ----------------//
+        $details = [
+                    '_is_fast_checkout' => 1
+                ];
+
+        $payment = $quote->getPayment();
+        $additionalData = $payment->getAdditionalInformation();
+        $newAdditionalData = !empty($additionalData) ? array_merge($additionalData, $details) : $details;
+        $payment->setAdditionalInformation($newAdditionalData);
+        $payment->save();
+        //-----------------//
 
         // Create Order From Quote
         $order = $this->quoteManagement->submit($quote);
@@ -1109,7 +1194,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                 $city = !empty($deliveryAddress->city) ? $deliveryAddress->city : $deliveryAddress->area;
                 
                 $country        = $deliveryAddress->country;
-                $city           = $city;
+                $city           = !empty($city) ? $city : __('N/A');
                 $state          = $deliveryAddress->province;
                 $address_2      = $deliveryAddress->area;
                 $address_1      = $deliveryAddress->address;
@@ -1146,8 +1231,9 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
            
             $shippingAddress = $order->getShippingAddress();
             $billingAddress = $order->getBillingAddress();
+            $phone = $this->bsecureHelper->phoneWithCountryCode($phone, $countryCode);
 
-            $region = $this->getRegionCode($state);
+            $regionId = $this->getRegionCode($state, $countryId);
 
             if (!empty($shippingAddress)) {
 
@@ -1158,8 +1244,8 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                 ->setCity($city)
                 ->setCountry_id($countryId);
                 
-                if (!empty($region['region_id'])) {
-                    $shippingAddress->setRegionId($region['region_id']);
+                if (!empty($regionId)) {
+                    $shippingAddress->setRegionId($regionId);
                 }
 
                 $shippingAddress->setPostcode($postcode)
@@ -1179,8 +1265,8 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                 ->setCity($city)
                 ->setCountry_id($countryId);
 
-                if (!empty($region['region_id'])) {
-                    $billingAddress->setRegionId($region['region_id']);
+                if (!empty($regionId)) {
+                    $billingAddress->setRegionId($regionId);
                 }
 
                 $billingAddress->setPostcode($postcode)
@@ -1245,10 +1331,10 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $address->setCity($addressInfo['city']);
         $address->setCountryId($addressInfo['country_id']);
         $address->setPostcode($addressInfo['postcode']);
-        $region = $this->getRegionCode($addressInfo['region_title']);
+        $regionId = $this->getRegionCode($addressInfo['region_title'], $addressInfo['country_id']);
        
-        if (!empty($region['region_id'])) {
-            $address->setRegionId($region['region_id']);
+        if (!empty($regionId)) {
+            $address->setRegionId($regionId);
         }
         
         $address->setIsDefaultShipping($addressInfo['default_shipping']);
@@ -1257,14 +1343,9 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $this->addressRepository->save($address);
     }
 
-    public function getRegionCode(string $region): array
+    public function getRegionCode($region, $countryCode)
     {
-        $regionCode = $this->regionFactory->create()
-            ->addRegionNameFilter($region)
-            ->getLastItem()
-            ->toArray();
-
-        return $regionCode;
+        return $this->regionFactory->loadByName($region, $countryCode)->getRegionId();
     }
 
     /*
@@ -1274,7 +1355,8 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
     {
 
         $placementStatus   = $orderData->placement_status;
-        $orderState = $this->magentoOrderStatus($placementStatus);
+        $paymentStatus   = $orderData->payment_status;
+        $orderState = $this->magentoOrderStatus($placementStatus, $paymentStatus);
         $order->setState($orderState);
         $order->setStatus($orderState);
         $order->save();
@@ -1377,6 +1459,8 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
             ->setIsCustomerNotified(false)
             ->setEntityName('order');
         }
+
+        $this->updateExistingOrder($order, $orderData);
 
         $order->setData('bsecure_order_ref', $orderData->order_ref);
         $order->setData('bsecure_order_type', strtolower($orderData->order_type));

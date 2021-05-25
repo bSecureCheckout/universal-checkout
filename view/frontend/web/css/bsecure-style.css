@@ -178,3 +178,43 @@ img.wc-bsecure-checkout-btn-mini-cart {
 {
   overflow-y: hidden;
 }
+
+.bsecure-checkout-button img.bsecure-btn-checkout-pg {
+  width: 100%;
+  max-width: 30%
+  
+}
+
+/* bsecure Button at checkout page */
+.bSecure-Wrapper .bsecure-checkout-button-wrapper-aside
+{
+  text-align: center;
+}
+.bSecure-Wrapper .bsecure-checkout-button-wrapper-aside .bsecure-checkout-button img.bsecure-btn-checkout-pg
+{
+  max-width: 60%;
+}
+.bSecure-Wrapper .opc-wrapper .bsecure-checkout-button-wrapper-aside
+{
+  display: none;
+}
+@media (max-width: 480px)
+{
+  .bSecure-Wrapper .bsecure-checkout-button-wrapper-aside
+  {
+    display: none;
+  }
+  .bSecure-Wrapper .opc-wrapper .bsecure-checkout-button-wrapper-aside
+  {
+    display: block;
+    position: relative;
+      background: #f4f4f4;
+      margin: -26px -15px 15px;
+      padding: 20px 15px;
+      text-align: center;
+  }
+  .bSecure-Wrapper .opc-wrapper .bsecure-checkout-button-wrapper-aside .bsecure-checkout-button img
+  {
+    max-width: 60%;
+  }
+}

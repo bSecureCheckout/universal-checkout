@@ -59,12 +59,126 @@ require([
 	        jQuery(".bsecure-popup-overlay").hide();       
 	    }
 
+	});
+
+
+	jQuery(document).on('change',"[name='country_id']",function(){
+		
+	 	//for country
+	 	var country_id = jQuery(this).val();		 	
+	    jQuery("input[name='telephone']").intlTelInput("setCountry", country_id.toLowerCase());
+
 	});		
+
+
+	jQuery(document).on("click","#checkout .new-address-popup button",function(){
+           
+		jQuery(".modal-inner-wrap .form-shipping-address").find("input[name='telephone']").intlTelInput("setCountry","pk");
+
+	});
+
+	if(jQuery(".bsecure-btn-checkout-pg").length > 0){
+
+		jQuery("body .page-wrapper").addClass("bSecure-Wrapper");
+	}
+
+	 //wait until the last element (.payment-method) being rendered
+    var existCondition = setInterval(function() {
+		if (jQuery('.checkout-shipping-method').length) { 
+		    clearInterval(existCondition);
+			// Handle bSecure checkout button at checkout pg
+			if(jQuery(".bsecure-checkout-button-wrapper").length > 0 ){
+				var bsecure_checkout_button_wrapper = jQuery(".bsecure-checkout-button-wrapper").html();
+			    if(jQuery(".bsecure-checkout-button-wrapper-aside").length < 1){
+
+			    	//if(detectMob()){
+			    		jQuery(".opc-wrapper").prepend('<div class="bsecure-checkout-button-wrapper-aside">' + bsecure_checkout_button_wrapper + '</div>');
+			    	//}
+			        jQuery(".opc-summary-wrapper").prepend('<div class="bsecure-checkout-button-wrapper-aside">' + bsecure_checkout_button_wrapper + '</div>');
+			        jQuery(".bsecure-checkout-button-wrapper").remove();
+			    }
+			}
+
+			setTimeout(function(){
+				jQuery(".table-checkout-shipping-method").find("#label_method_bsecureshipping_bsecureshipping").parents("tr").remove();
+			},100);
+		}
+		
+	},200);
+
+
+	var existCondition = setInterval(function() {
+		if (jQuery('#label_method_bsecureshipping_bsecureshipping').length) { 
+		    clearInterval(existCondition);
+		    jQuery(".table-checkout-shipping-method").find("#label_method_bsecureshipping_bsecureshipping").parents("tr").remove();
+		}
+		
+	},200);
+
+
+	var existCondition = setInterval(function() {
+		if (jQuery("input[name='telephone']").length > 0 ) {
+			if (jQuery("input[name='telephone']").val().includes("undefined")) { 
+			    clearInterval(existCondition);
+			    var country_id = jQuery("select[name='country_id']").val().toLowerCase();		 	
+	            
+	            jQuery("input[name='telephone']").val(jQuery("input[name='telephone']").val().replace("undefined", jQuery("li[data-country-code="+country_id+"]").data("dial-code")));
+	            jQuery("input[name='telephone']").intlTelInput("setCountry", country_id.toLowerCase());
+	        }	
+        }	
+	},200);
+
+
+	jQuery(document).on("click", ".opc-progress-bar-item", function(){
+		var country_id = jQuery("select[name='country_id']").val().toLowerCase();
+		jQuery("input[name='telephone']").val(jQuery("input[name='telephone']").val().replace("undefined", jQuery("li[data-country-code="+country_id+"]").data("dial-code")));
+		jQuery("input[name='telephone']").intlTelInput("setCountry", country_id.toLowerCase());
+	});
+
+
+	jQuery(document).ready(function($) {
+
+	  if (window.history && window.history.pushState) {
+
+	    //window.history.pushState('forward', null, './#forward');
+
+	    $(window).on('popstate', function() {
+	      
+	    	var existCondition = setInterval(function() {
+	    	if (jQuery("input[name='telephone']").length > 0 ) {
+				if (jQuery("input[name='telephone']").val().includes("undefined")) { 
+					    clearInterval(existCondition);
+					    var country_id = jQuery("select[name='country_id']").val().toLowerCase();
+			            jQuery("input[name='telephone']").val(jQuery("input[name='telephone']").val().replace("undefined", jQuery("li[data-country-code="+country_id+"]").data("dial-code")));
+			            jQuery("input[name='telephone']").intlTelInput("setCountry", country_id.toLowerCase());
+			        }
+			    }		
+			},200);
+
+	    });
+
+	  }
+	});
+	
 				
 });
 
 
+function detectMob() {
+    const toMatch = [
+        /Android/i,
+        /webOS/i,
+        /iPhone/i,
+        /iPad/i,
+        /iPod/i,
+        /BlackBerry/i,
+        /Windows Phone/i
+    ];
 
+    return toMatch.some((toMatchItem) => {
+        return navigator.userAgent.match(toMatchItem);
+    });
+}
 
 function scrollToMessageArea(){
 
@@ -144,5 +258,7 @@ window.addEventListener("message", (event)=>{
 function focusBsecureWindow() {  	
   	bsecureWindow.focus();
 }
+
+
 
 

@@ -23,7 +23,23 @@ class Fee extends \Magento\Framework\View\Element\Template
     {
         $parent = $this->getParentBlock();
         $this->_order = $parent->getOrder();
+       
+        if (!empty($this->_order->getBsecureDiscount())) {
+            if ($this->_order->getSubtotal() == $this->_order->getBsecureDiscount()) {
 
+                $fee = new \Magento\Framework\DataObject(
+                    [
+                        'code' => 'bsecure_discount',
+                        'strong' => true,
+                        'value' => $this->_order->getBsecureDiscount(),
+                        'label' => __('Discount (bSecure)'),
+                    ]
+                );
+
+                $parent->addTotal($fee, 'bsecure_discount');
+            }
+        }
+        
         if (!empty($this->_order->getBsecureServiceCharges())) {
 
             $fee = new \Magento\Framework\DataObject(

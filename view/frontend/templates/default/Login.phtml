@@ -8,7 +8,8 @@ $btnBsecureLogin = 'Bsecure_UniversalCheckout::images/login-with-bsecure.jpg';
 if ($bsecureBtnShowLogin == 1 && $moduleEnabled == 1) {
     ?>
         
-        <a href="<?= $block->escapeHtmlAttr($block->getUrl('bsecure/index/bsecurelogin')); ?>" 
+        <a href="<?=
+        $block->escapeHtmlAttr($block->getUrl('bsecure/index/bsecurelogin?login=1')); ?>" 
             class="bsecure-login-button">
             <img data-role="bsecure-login"
                 title="<?= $block->escapeHtmlAttr(__("Login with bSecure")); ?>"

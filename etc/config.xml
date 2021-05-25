@@ -12,6 +12,8 @@
         <universalcheckout2>
             <general2>
                 <bsecure_payment_gateway>1</bsecure_payment_gateway>                
+                <is_display_at_checkout_pg>1</is_display_at_checkout_pg>                
+                <auto_append_country_code>0</auto_append_country_code>                
             </general2>
         </universalcheckout2>
 

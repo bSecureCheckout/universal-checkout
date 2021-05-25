@@ -2,7 +2,7 @@
     "name": "bsecure/universal-checkout",
     "description": "bSecure is a universal checkout made for the Pakistan market that is easy & simple to install on any Magento2 store. It gives you an option to enable one-step check out and accept multiple payment method for your customers, as well as run your business hassle free.",
     "type": "magento2-module",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "license": [
       "OSL-3.0",
       "AFL-3.0"

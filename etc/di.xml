@@ -10,5 +10,10 @@
     
     <type name="Magento\Quote\Api\ShipmentEstimationInterface">
         <plugin name="hide_show_shipping_methods" type="Bsecure\UniversalCheckout\Plugin\Quote\Api\ShipmentEstimationPlugin"/>
-    </type>       
+    </type>
+    <type name="Magento\Checkout\Block\Checkout\LayoutProcessor">
+        <plugin disabled="false" name="Bsecure_UniversalCheckout_Plugin_Block_Checkout_LayoutProcessor"
+                type="Bsecure\UniversalCheckout\Plugin\Block\Checkout\LayoutProcessor"/>
+    </type>
+    
 </config>

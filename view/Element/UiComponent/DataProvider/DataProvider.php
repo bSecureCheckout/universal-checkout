@@ -8,6 +8,7 @@ use Magento\Framework\Api\Search\SearchCriteriaBuilder;
 use Magento\Framework\Api\Search\SearchResultInterface;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\View\Element\UiComponent\DataProvider\DataProviderInterface;
+use Magento\Framework\App\DeploymentConfig;
 
 class DataProvider extends \Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider
 {
@@ -88,6 +89,7 @@ class DataProvider extends \Magento\Framework\View\Element\UiComponent\DataProvi
         SearchCriteriaBuilder $searchCriteriaBuilder,
         RequestInterface $request,
         FilterBuilder $filterBuilder,
+        DeploymentConfig $deploymentConfig,
         array $meta = [],
         array $data = []
     ) {
@@ -98,13 +100,21 @@ class DataProvider extends \Magento\Framework\View\Element\UiComponent\DataProvi
         $this->requestFieldName = $requestFieldName;
         $this->reporting = $reporting;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
+        $this->deploymentConfig = $deploymentConfig;
         $this->meta = $meta;
         $this->data = $data;
         $this->prepareUpdateUrl();
     }
     protected function searchResultToOutput(SearchResultInterface $searchResult)
     {
-        $searchResult->addFieldToFilter('status', ['neq' => 'bsecure_draft']);
+
+        $dbPrefix = ($this->deploymentConfig->get('db/table_prefix'));
+        $mainTable = $dbPrefix . 'sales_order_grid';
+        
+        if ($searchResult->getMainTable() === $mainTable) {
+            $searchResult->addFieldToFilter('status', ['neq' => 'bsecure_draft']);
+        }
+        
         $arrItems = [];
 
         $arrItems['items'] = [];

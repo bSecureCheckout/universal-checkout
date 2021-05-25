@@ -47,9 +47,9 @@ class BsecurePopupWindow extends Template
         return $this->bsecureHelper;
     }
 
-    public function getBsecureSettings($key)
+    public function getBsecureSettings($key, $path = 'universalcheckout/general/')
     {
-        return $this->bsecureHelper->getConfig('universalcheckout/general/'.$key);
+        return $this->bsecureHelper->getConfig($path.$key);
     }
 
     public function isHostedWindow()
