@@ -1,0 +1,13 @@
+<?php
+/**
+ * @var $block  Bsecure\UniversalCheckout\Block\PhoneNumber
+ */
+?>
+<script type="text/x-magento-init">
+    {
+        "input[name='telephone']": {
+            "Bsecure_UniversalCheckout/js/internationalTelephoneInput":
+            <?= $block->escapeJsQuote($block->phoneConfig()); ?>
+        }
+    }
+</script>

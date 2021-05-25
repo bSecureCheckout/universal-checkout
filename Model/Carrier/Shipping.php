@@ -23,6 +23,11 @@ class Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier implement
     protected $_rateMethodFactory;
 
     /**
+     * @var \Magento\Framework\App\Request\Http
+     */
+    protected $_request;
+
+    /**
      * Shipping constructor.
      *
      * @param \Magento\Framework\App\Config\ScopeConfigInterface          $scopeConfig
@@ -38,12 +43,12 @@ class Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier implement
         \Psr\Log\LoggerInterface $logger,
         \Magento\Shipping\Model\Rate\ResultFactory $rateResultFactory,
         \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory,
-        \Magento\Framework\App\Request\Http $requestt,
+        \Magento\Framework\App\Request\Http $request,
         array $data = []
     ) {
         $this->_rateResultFactory = $rateResultFactory;
         $this->_rateMethodFactory = $rateMethodFactory;
-        $this->_request = $requestt;
+        $this->_request = $request;
 
         parent::__construct($scopeConfig, $rateErrorFactory, $logger, $data);
     }
@@ -101,6 +106,6 @@ class Shipping extends \Magento\Shipping\Model\Carrier\AbstractCarrier implement
         $method->setCost($amount);
         $result->append($method);
 
-        return $result;
+        return  $result;
     }
 }

@@ -6,6 +6,7 @@ use Magento\Sales\Model\Order;
 
 class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
 {
+    protected $_request;
 
     public function __construct(
         \Magento\Framework\Registry $registry,
@@ -16,7 +17,8 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
         \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository,
         \Bsecure\UniversalCheckout\Helper\Data $bsecureHelper,
         \Bsecure\UniversalCheckout\Helper\OrderHelper $orderHelper,
-        \Magento\Framework\Message\ManagerInterface $messageManager
+        \Magento\Framework\Message\ManagerInterface $messageManager,
+        \Magento\Framework\App\Request\Http $request
     ) {
 
         $this->_storeManager = $storeManager;
@@ -27,47 +29,66 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
         $this->bsecureHelper = $bsecureHelper;
         $this->orderHelper = $orderHelper;
         $this->messageManager = $messageManager;
+        $this->_request  = $request;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
-        $order = $observer->getEvent()->getOrder();
-        $orderIncrementId = $order->getIncrementId();
+        $orderData = json_decode($this->_request->getContent());
+        /*
+        Make sure order is not from bsecure server this observer
+        is only for bsecure payment gateway feature at checkout
+        */
+        if (!isset($orderData->order_type)) {
 
-        $quote = $this->checkoutSession->getQuote();
-        $orderId = $this->checkoutSession->getLastOrderId();
-       
-        $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
-        //$order = $objectManager->create('\Magento\Sales\Model\Order') ->load($orderId);
-        $payment = $quote->getPayment();
+            $order = $observer->getEvent()->getOrder();
 
-        $method = $payment->getMethodInstance();
-        $methodTitle = $method->getTitle();
+            $orderIncrementId = $order->getIncrementId();
 
-        //$order_data= $order->getData();
-        $status = $this->checkoutSession->getLastOrderStatus();
+            $quote = $this->checkoutSession->getQuote();
 
-        if ($methodTitle == 'bSecure Payment' && $quote->getCustomerEmail() != 'guest@example.com') {
-           
-            $requestData = $this->getOrderPayLoad($quote, $orderIncrementId);
+            $orderId = $this->checkoutSession->getLastOrderId();
+          
+            $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
 
-            $response = $this->sendPaymentRequestBsecure($requestData);
+            $payment = $quote->getPayment();
 
-            if (!empty($response->order_reference)) {
+            $additionalData = $payment->getAdditionalInformation();
 
-                $details =  [
-                            '_bsecure_order_ref' => $response->order_reference,
-                            '_bsecure_order_type' => 'before_payment_gateway',
-                            '_bsecure_order_id' => $orderIncrementId,
-                            '_bsecure_order_checkout_url' => $response->checkout_url
-                            
-                        ];
-            
-                $additionalData = $payment->getAdditionalInformation();
-                $newAdditionalData = !empty($additionalData) ? array_merge($additionalData, $details) : $details;
-                $payment->setAdditionalInformation($newAdditionalData);
-                $payment->save();
+            $isFastCheckout = !empty($additionalData['_is_fast_checkout'])
+            ? $additionalData['_is_fast_checkout'] : false;
 
+            if (!$this->_request->getParam('order_ref')) {
+
+                $method = $payment->getMethodInstance();
+
+                $methodTitle = $method->getTitle();
+
+                $status = $this->checkoutSession->getLastOrderStatus();
+
+                if ($methodTitle == 'bSecure Payment'
+                    && !$isFastCheckout) {
+                   
+                    $requestData = $this->getOrderPayLoad($quote, $orderIncrementId);
+
+                    $response = $this->sendPaymentRequestBsecure($requestData);
+
+                    if (!empty($response->order_reference)) {
+
+                        $details =  [
+                                    '_bsecure_order_ref' => $response->order_reference,
+                                    '_bsecure_order_type' => 'before_payment_gateway',
+                                    '_bsecure_order_id' => $orderIncrementId,
+                                    '_bsecure_order_checkout_url' => $response->checkout_url
+                                    
+                                ];
+                        
+                        $newAdditionalData = !empty($additionalData) ?
+                        array_merge($additionalData, $details) : $details;
+                        $payment->setAdditionalInformation($newAdditionalData);
+                        $payment->save();
+                    }
+                }
             }
         }
     }
@@ -95,11 +116,24 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
 
             $customerId = $this->customerSession->getCustomer()->getId();
             $customerData = $this->customerRepository->getById($customerId);
-            $countryCode = $customerData->getCustomAttribute('country_code')->getValue();
-            $authCode = $customerData->getCustomAttribute('bsecure_auth_code')
+           
+            if (!empty($customerData->getCustomAttribute('country_code'))) {
+                 $countryCode = $customerData->getCustomAttribute('country_code')
                               ->getValue();
+            }
+
+            if (!empty($customerData->getCustomAttribute('bsecure_auth_code'))) {
+                 $authCode = $customerData->getCustomAttribute('bsecure_auth_code')
+                              ->getValue();
+            }
+           
             $userPhone = $this->customerSession->getCustomer()->getPhone();
             $billingPhone = !empty($billingPhone) ? $billingPhone : $userPhone;
+
+            $billingPhone = !empty($countryCode) ?
+            $this->bsecureHelper->phoneWithoutCountryCode($billingPhone, $countryCode) :
+            $billingPhone;
+             
         }
 
         $orderData = [
@@ -125,7 +159,7 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
             ],
             "customer_address_id" => 0
         ];
-
+        
         return  $orderData;
     }
 

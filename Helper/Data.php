@@ -15,7 +15,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     const BSECURE_DEV_VIEW_ORDER_URL = 'https://partners-dev.bsecure.app/view-order/';
     const BSECURE_STAGE_VIEW_ORDER_URL = 'https://partners-stage.bsecure.app/view-order/';
     const BSECURE_LIVE_VIEW_ORDER_URL = 'https://partner.bsecure.pk/view-order/';
-
+      
     public $baseUrl = "";
 
     public function __construct(
@@ -109,6 +109,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $grantType     = 'client_credentials';
         $clientId      = $this->getConfig('universalcheckout/general/bsecure_client_id');
         $clientSecret  = $this->getConfig('universalcheckout/general/bsecure_client_secret');
+        $bsecureStoreId  = $this->getConfig('universalcheckout/general/bsecure_store_id');
+        $clientId       = !empty($bsecureStoreId) ? $clientId.':'.$bsecureStoreId : $clientId;
 
         $config = $this->getBsecureConfig();
 
@@ -229,8 +231,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         // Build the API redirect url.
         $clientId  = $this->getConfig('universalcheckout/general/bsecure_client_id');
         $bsecureClientSecret  = $this->getConfig('universalcheckout/general/bsecure_client_secret');
+        $bsecureStoreId  = $this->getConfig('universalcheckout/general/bsecure_store_id');
         $config = $this->getBsecureConfig();
         $ssoEndpoint = !empty($config->ssoLogin) ? $config->ssoLogin : "/";
+
+        $clientId       = !empty($bsecureStoreId) ? $clientId.':'.$bsecureStoreId : $clientId;
         
         $responseType  = 'code';
         $sessioinId    = $this->_session->getSessionId();
@@ -264,12 +269,22 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     /*
      * Remove country code from phone number
      */
-    public function phoneWithoutCountryCode($phoneNumber)
+    public function phoneWithoutCountryCode($phoneNumber, $countryCode = '92')
     {
+
+        if (preg_match('/^\+\d+$/', $phoneNumber)) {
+
+            if (!empty($countryCode)) {
+
+                 return str_replace('+'.$countryCode, '', $phoneNumber);
+            }
+
+            return $phoneNumber;
+        }
 
         $phoneNumber = str_replace(['+','-',' '], '', $phoneNumber);
 
-        if (strlen($phoneNumber) > 10) {
+        if (strlen($phoneNumber) >= 12) {
             $phoneNumber = substr($phoneNumber, -10);
         }
         
@@ -281,16 +296,51 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function phoneWithCountryCode($phoneNumber, $countryCode = '92')
     {
-        
-        $phoneNumber = str_replace(['+','-',' '], '', $phoneNumber);
+        if (preg_match('/^\+\d+$/', $phoneNumber)) {
 
-        if (strlen($phoneNumber) > 10) {
-            $phoneNumber = substr(ltrim($phoneNumber, '+'), -10);
-            $phoneNumber = '+'.$countryCode.$phoneNumber;
-        } else {
-            $phoneNumber = '+'.$countryCode.$phoneNumber;
+            return $phoneNumber;
         }
-       
+
+        $phoneNumber = '+'.$countryCode.$phoneNumber;
+
         return $phoneNumber;
+    }
+    
+    /**
+     * Prepare telephone field config according to the Magento default config
+     * @param $addressType
+     * @param string $method
+     * @return array
+     */
+    public function telephoneFieldConfig($addressType, $method = '')
+    {
+        return  [
+            'component' => 'Magento_Ui/js/form/element/abstract',
+            'config' => [
+                'customScope' => $addressType . $method,
+                'customEntry' => null,
+                'template' => 'ui/form/field',
+                'elementTmpl' => 'Bsecure_UniversalCheckout/form/element/telephone',
+                'tooltip' => [
+                    'description' => 'For delivery questions.',
+                    'tooltipTpl' => 'ui/form/element/helper/tooltip'
+                ],
+            ],
+            'dataScope' => $addressType . $method . '.telephone',
+            'dataScopePrefix' => $addressType . $method,
+            'label' => __('Phone Number'),
+            'provider' => 'checkoutProvider',
+            'sortOrder' => 120,
+            'validation' => [
+                "required-entry"    => true,
+                "max_text_length"   => 255,
+                "min_text_length"   => 1
+            ],
+            'options' => [],
+            'filterBy' => null,
+            'customEntry' => null,
+            'visible' => true,
+            'focused' => false,
+        ];
     }
 }

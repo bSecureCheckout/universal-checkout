@@ -80,6 +80,7 @@ class BsecureAjax extends \Magento\Framework\App\Action\Action
                     }
                 }
             }
+            
         }
 
         return $result->setData($returnRersult);

@@ -24,7 +24,9 @@ class BsecureLogin extends \Magento\Framework\App\Action\Action
         \Magento\Customer\Api\AddressRepositoryInterface $addressRepository,
         \Magento\Customer\Api\Data\AddressInterfaceFactory $addressFactory,
         \Magento\Directory\Model\ResourceModel\Region\Collection $regionCollection,
-        \Magento\Directory\Model\ResourceModel\Region\CollectionFactory $regionCollectionFactory
+        \Magento\Directory\Model\ResourceModel\Region\CollectionFactory $regionCollectionFactory,
+        \Magento\Framework\Controller\Result\Redirect $resultRedirectFactory,
+        \Magento\Checkout\Model\Cart $cart
     ) {
         
         $this->request             = $request;
@@ -40,7 +42,9 @@ class BsecureLogin extends \Magento\Framework\App\Action\Action
         $this->addressFactory     = $addressFactory;
         $this->regionCollection     = $regionCollection;
         $this->regionCollectionFactory     = $regionCollectionFactory;
+        $this->resultRedirectFactory     = $resultRedirectFactory;
         $this->getCustomerEndpoint = '/sso/customer/profile';
+        $this->cart             = $cart;
 
         return parent::__construct($context);
     }
@@ -55,6 +59,7 @@ class BsecureLogin extends \Magento\Framework\App\Action\Action
 
         $state = filter_var($this->request->getParam('state'), FILTER_SANITIZE_STRING);
         $code = filter_var($this->request->getParam('code'), FILTER_SANITIZE_STRING);
+        $login = filter_var($this->request->getParam('login'), FILTER_SANITIZE_STRING);
 
         if (!empty($state) && !empty($code)) {
             if ($this->bsecureHelper->validateState($state)) {
@@ -98,8 +103,13 @@ class BsecureLogin extends \Magento\Framework\App\Action\Action
                    $telephone = $this->bsecureHelper->phoneWithCountryCode($phoneNumber, $countryCode);
 
                    $addressInfo = [
-                                    'first_name' => $this->orderHelper->getFirstNameLastName($this->user->name),
-                                    'last_name' => $this->orderHelper->getFirstNameLastName($this->user->name),
+                                    'first_name' => $this->orderHelper->getFirstNameLastName(
+                                        $this->user->name
+                                    ),
+                                    'last_name' => $this->orderHelper->getFirstNameLastName(
+                                        $this->user->name,
+                                        'last_name'
+                                    ),
                                     'street' => ['Test Address'],
                                     'telephone' => $telephone,
                                     'city' => 'Karachi',
@@ -125,8 +135,13 @@ class BsecureLogin extends \Magento\Framework\App\Action\Action
                        // @codingStandardsIgnoreEnd
 
                        $addressInfo = [
-                                    'first_name' => $this->orderHelper->getFirstNameLastName($this->user->name),
-                                    'last_name' => $this->orderHelper->getFirstNameLastName($this->user->name),
+                                    'first_name' => $this->orderHelper->getFirstNameLastName(
+                                        $this->user->name
+                                    ),
+                                    'last_name' => $this->orderHelper->getFirstNameLastName(
+                                        $this->user->name,
+                                        'last_name'
+                                    ),
                                     'street' => [$address],
                                     'telephone' => $telephone,//phpcs:ignore
                                     'city' => $city,
@@ -152,14 +167,22 @@ class BsecureLogin extends \Magento\Framework\App\Action\Action
                    }
 
                    $this->customerSession->setCustomerAsLoggedIn($customer);
-
+                   $this->_clearQuote();
                    $this->redirectToMyAccountPage();
             } else {
-                $this->redirectToMyAccountPage(__("Invalid Request: state is not verified."));
+                $this->redirectToMyAccountPage(__("Access Forbidden: Invalid login request found.
+                 Please try again later."));
             }
-        } else {
+        } elseif ($login == 1) {
+
             $redirectUrl = $this->bsecureHelper->buildBsecureRedirectUrl();
-            $this->_redirect($redirectUrl);
+            $resultRedirect = $this->resultRedirectFactory->create();
+            $resultRedirect->setUrl($redirectUrl);
+            return $resultRedirect;
+
+        } else {
+
+            $this->redirectToMyAccountPage(__('You have cancelled to login with bSecure!'));
         }
     }
 
@@ -200,7 +223,7 @@ class BsecureLogin extends \Magento\Framework\App\Action\Action
             'body' => ['code' => $code],
             'headers'     => $headers
         ];
-
+        
         $response = $this->bsecureHelper->bsecureSendCurlRequest($url, $params);
 
         $validateResponse = $this->bsecureHelper->validateResponse($response);
@@ -229,7 +252,7 @@ class BsecureLogin extends \Magento\Framework\App\Action\Action
             }
         }
 
-        $this->_redirect('customer/account/');
+        return $this->_redirect('customer/account/');
     }
 
     /**
@@ -298,5 +321,14 @@ class BsecureLogin extends \Magento\Framework\App\Action\Action
         $customerData->setCustomAttribute('bsecure_user_account_email', $userData['email']);
         $customer->updateData($customerData);
         $customer->save();
+    }
+
+    // Clear Cart //
+    protected function _clearQuote()
+    {
+        $this->cart->truncate();
+        $this->cart->getQuote()->setTotalsCollectedFlag(false);
+         $this->cart->getQuote()->setIsActive(0);
+        $this->cart->save();
     }
 }

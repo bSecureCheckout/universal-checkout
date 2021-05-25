@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <css src="Bsecure_UniversalCheckout::css/intlTelInput.css"/>
+    </head>
+
     <body>
         <referenceBlock name="checkout.root">
             <arguments>
@@ -39,5 +43,17 @@
                 </argument>
             </arguments>
         </referenceBlock>
+        <referenceContainer name="page.bottom.container">
+            <block class="Bsecure\UniversalCheckout\Block\PhoneNumber"
+                   ifconfig="universalcheckout/general/enable"
+                   template="Bsecure_UniversalCheckout::js-checkout.phtml"
+                   name="international.telephone.input"/>
+        </referenceContainer>
+        <referenceContainer name="page.bottom.container">
+            <block class="Bsecure\UniversalCheckout\Block\Checkout"
+                   ifconfig="universalcheckout/general/enable"                   
+                   template="Bsecure_UniversalCheckout::checkout/link.phtml"
+                   name="form.additional.info"/>
+        </referenceContainer>
     </body>
 </page>
