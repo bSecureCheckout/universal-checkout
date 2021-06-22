@@ -136,6 +136,8 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
              
         }
 
+        $cartData = $this->orderHelper->getCartData();
+
         $orderData = [
             "order_id" => $orderIncrementId,
             "currency" => $quote->getQuoteCurrencyCode(),
@@ -157,7 +159,8 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
                 "province" => $billingState,
                 "area" => '',
             ],
-            "customer_address_id" => 0
+            "customer_address_id" => 0,
+            "products" => !empty($cartData['products']) ? $cartData['products'] : []
         ];
         
         return  $orderData;

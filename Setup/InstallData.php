@@ -8,18 +8,23 @@ use Magento\Framework\Setup\InstallDataInterface;
 use Magento\Framework\Setup\ModuleContextInterface;
 use Magento\Framework\Setup\ModuleDataSetupInterface;
 use Magento\Customer\Model\Customer;
+use Bsecure\UniversalCheckout\Helper\Data as BsecureHelper;
 
 class InstallData implements InstallDataInterface
 {
+    protected $_bsecureHelper;
+
     public function __construct(
         \Magento\Customer\Setup\CustomerSetupFactory $customerSetupFactory,
         \Magento\Eav\Model\Entity\Attribute\SetFactory $setFactory,
-        Customer $customer
+        Customer $customer,
+        BsecureHelper $bsecureHelper
     ) {
         
         $this->customerSetupFactory = $customerSetupFactory;
         $this->setFactory           = $setFactory;
         $this->customer           = $customer;
+        $this->_bsecureHelper     = $bsecureHelper;
     }
     
     public function install(ModuleDataSetupInterface $setup, ModuleContextInterface $context) //phpcs:ignore
@@ -149,5 +154,7 @@ class InstallData implements InstallDataInterface
         );
 
         $attribute->save();
+
+        $this->_bsecureHelper->setConfig('universalcheckout/general/bsecure_installed', 1);
     }
 }
