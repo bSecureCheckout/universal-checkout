@@ -17,6 +17,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     const BSECURE_DEV_VIEW_ORDER_URL = 'https://partners-dev.bsecure.app/view-order/';
     const BSECURE_STAGE_VIEW_ORDER_URL = 'https://partners-stage.bsecure.app/view-order/';
     const BSECURE_LIVE_VIEW_ORDER_URL = 'https://partner.bsecure.pk/view-order/';
+    const BSECURE_PLUGIN_STATUS_NEW = 1; // bSecure Server
+    const BSECURE_PLUGIN_STATUS_DISBALED = 3; // bSecure Server
       
     public $baseUrl = "";
 
@@ -427,8 +429,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $response = $this->bsecureSendCurlRequest($surveyEndpoint, $params);
 
             $this->logger->debug("
-                ..........Uninstall.........
-                surveyEndpoint: ".$surveyEndpoint."..........
+                .........surveyEndpoint: ".$surveyEndpoint."..........
                 requestData: ".json_encode($requestData)."..........
                 Response:".json_encode([$response]));
 
@@ -437,17 +438,45 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             if ($validateResponse['error']) {
                 
                 return false;
-
-            } else {
-
-                if (!empty($response->body)) {
-                    $this->logger->debug("...........Response Body:".json_encode([$response->body])."............");
-                    return $response->body;
-                }
             }
 
         }
 
         return false;
+    }
+
+    /**
+     * Send notification at install
+     */
+    public function installNotification()
+    {
+
+        $this->setConfig('universalcheckout/general/bsecure_installed', 0);
+
+        $storeId = $this->getConfig('universalcheckout/general/bsecure_store_id');
+
+        $notifyData = [
+                    'status' => Data::BSECURE_PLUGIN_STATUS_NEW, //Install
+                    'reason' => 'Module Installed',
+                    'reason_message' => 'Module Installed',
+                ];
+        $this->logger->debug("-------------installNotification-----------bsecureStoreId:".$storeId."----------------");
+        $this->sendNotificationToBsecure($notifyData);
+    }
+
+    /**
+     * Send notification at uninstall
+     */
+    public function unstallNotification()
+    {
+
+        $notifyData = [
+                        'status' => Data::BSECURE_PLUGIN_STATUS_DISBALED, //Uninstall
+                        'reason' => 'Module Uninstalled',
+                        'reason_message' => 'Module Uninstalled',
+                    ];
+
+        $this->logger->debug("-------------unstallNotification-----------");
+        $this->sendNotificationToBsecure($notifyData);
     }
 }

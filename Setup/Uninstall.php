@@ -26,13 +26,7 @@ class Uninstall implements UninstallInterface
        
         $setup->startSetup();
 
-        $notifyData = [
-                        'status' => 0,
-                        'reason' => __('Module Uninstalled'),
-                        'reason_message' => '',
-                    ];
-
-        $this->bsecureHelper->sendNotificationToBsecure($notifyData);
+        $this->bsecureHelper->unstallNotification();
 
         $setup->endSetup();
     }
