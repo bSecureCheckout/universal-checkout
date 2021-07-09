@@ -159,6 +159,13 @@ require([
 
 	  }
 	});
+
+
+	jQuery(document).on("click", ".bsecure-login-button", function(e){
+    	e.preventDefault();
+	    var loginUrl = jQuery(this).attr("href");    
+	    openBsecureWindow(loginUrl+"?hosted=1#bsecure-auto-checkout");
+	});
 	
 				
 });
@@ -239,12 +246,24 @@ function isPopupBlocked(isBlocked){
 // Receive message from bsecure server //
 window.addEventListener("message", (event)=>{	
 	
-    if (event.origin == "https://order-dev.bsecure.app" || event.origin == "https://checkout-stage.bsecure.app" || event.origin == "https://order.bsecure.pk" ){
+	//console.log('event.origin In:', event.origin, 'event.data:', event.data);
 
+    if (event.origin == "https://order-dev.bsecure.app" || 
+    	event.origin == "https://checkout-stage.bsecure.app" || 
+    	event.origin == "https://order.bsecure.pk" || 
+    	event.origin == "https://login-dev.bsecure.app" || 
+    	event.origin == "https://login-stage.bsecure.app" || 
+    	event.origin == "https://login.bsecure.pk" ){
+    	console.log('event.origin In:', event.origin, 'event.data:', event.data);
     		bsecureWindow.close();
-
+alert("event triggered.........");
 		   	if(typeof event.data.hrf !== 'undefined'){
-		   		jQuery('.checkout').trigger('processStart');
+		   		if(jQuery(".checkout").length > 0) {
+		   			jQuery('.checkout').trigger('processStart');
+		   		} else {
+		   			jQuery('body').trigger('processStart');
+		   		}
+		   		
 		   		window.location.href=event.data.hrf;
 		   }
 

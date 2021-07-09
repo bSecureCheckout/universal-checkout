@@ -451,8 +451,6 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function installNotification()
     {
 
-        $this->setConfig('universalcheckout/general/bsecure_installed', 0);
-
         $storeId = $this->getConfig('universalcheckout/general/bsecure_store_id');
 
         $notifyData = [
@@ -462,6 +460,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
                 ];
         $this->logger->debug("-------------installNotification-----------bsecureStoreId:".$storeId."----------------");
         $this->sendNotificationToBsecure($notifyData);
+        $this->setConfig('universalcheckout/general/bsecure_installed', 0);
     }
 
     /**
