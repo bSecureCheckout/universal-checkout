@@ -254,9 +254,8 @@ window.addEventListener("message", (event)=>{
     	event.origin == "https://login-dev.bsecure.app" || 
     	event.origin == "https://login-stage.bsecure.app" || 
     	event.origin == "https://login.bsecure.pk" ){
-    	console.log('event.origin In:', event.origin, 'event.data:', event.data);
+    	//console.log('event.origin In:', event.origin, 'event.data:', event.data);
     		bsecureWindow.close();
-alert("event triggered.........");
 		   	if(typeof event.data.hrf !== 'undefined'){
 		   		if(jQuery(".checkout").length > 0) {
 		   			jQuery('.checkout').trigger('processStart');
