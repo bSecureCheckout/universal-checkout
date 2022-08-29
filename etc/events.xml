@@ -4,7 +4,7 @@
         <observer name="order_id_sales_after" instance="Bsecure\UniversalCheckout\Observer\BeforeOrderComplete" />
     </event>
     <event name="checkout_onepage_controller_success_action">
-        <observer name="order_id_sales_after_success_action" instance="Bsecure\UniversalCheckout\Observer\OrderComplete" />
+        <observer name="bsecure_universalcheckout_observer_ordersaveafter" instance="Bsecure\UniversalCheckout\Observer\OrderComplete" />
     </event>
      <event name="payment_method_is_active">  
      	<observer name="restrict_payment_methods" instance="Bsecure\UniversalCheckout\Observer\RestrictPaymentMethods" />  

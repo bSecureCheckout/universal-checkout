@@ -39,8 +39,8 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
         Make sure order is not from bsecure server this observer
         is only for bsecure payment gateway feature at checkout
         */
-        if (!isset($orderData->order_type)) {
 
+        if (!isset($orderData->order_type)) {
             $order = $observer->getEvent()->getOrder();
 
             $orderIncrementId = $order->getIncrementId();
@@ -59,22 +59,20 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
             ? $additionalData['_is_fast_checkout'] : false;
 
             if (!$this->_request->getParam('order_ref')) {
-
                 $method = $payment->getMethodInstance();
 
-                $methodTitle = $method->getTitle();
+                $methodCode = $method->getCode();
 
                 $status = $this->checkoutSession->getLastOrderStatus();
 
-                if ($methodTitle == 'bSecure Payment'
-                    && !$isFastCheckout) {
-                   
+                if ($methodCode == 'bsecurepayment'
+                    && !$isFastCheckout
+                ) {
                     $requestData = $this->getOrderPayLoad($quote, $orderIncrementId);
 
                     $response = $this->sendPaymentRequestBsecure($requestData);
 
                     if (!empty($response->order_reference)) {
-
                         $details =  [
                                     '_bsecure_order_ref' => $response->order_reference,
                                     '_bsecure_order_type' => 'before_payment_gateway',
@@ -108,12 +106,11 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
         $billingState = $billingAddress->getState();
         $billingAdress = $billingAddress->getStreet();
        
-        $customerName = trim($billingFirstName. ' ' .$billingLastName);
+        $customerName = trim($billingFirstName . ' ' . $billingLastName);
         $authCode = "";
         $countryCode = "";
 
         if ($this->customerSession->isLoggedIn()) {
-
             $customerId = $this->customerSession->getCustomer()->getId();
             $customerData = $this->customerRepository->getById($customerId);
            
@@ -133,7 +130,6 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
             $billingPhone = !empty($countryCode) ?
             $this->bsecureHelper->phoneWithoutCountryCode($billingPhone, $countryCode) :
             $billingPhone;
-             
         }
 
         $cartData = $this->orderHelper->getCartData();
@@ -174,13 +170,10 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
         $validateResponse = $this->bsecureHelper->validateResponse($response, 'token_request');
 
         if ($validateResponse['error']) {
-                
             $this->messageManager->addError($validateResponse['msg']);
             return false;
-
         } else {
-
-            $headers =  ['Authorization' => 'Bearer '.$response->access_token];
+            $headers =  ['Authorization' => 'Bearer ' . $response->access_token];
 
             $params =   [
                             'method' => 'POST',
@@ -198,18 +191,13 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
             $validateResponse = $this->bsecureHelper->validateResponse($response);
 
             if ($validateResponse['error']) {
-                
                 $this->messageManager->addError($validateResponse['msg']);
                 return false;
-
             } else {
-
                 if (!empty($response->body)) {
-
                     return $response->body;
                 }
             }
-
         }
 
         return false;
