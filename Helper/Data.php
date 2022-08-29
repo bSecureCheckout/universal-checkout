@@ -6,6 +6,8 @@
 namespace Bsecure\UniversalCheckout\Helper;
 
 use Magento\Framework\HTTP\Client\Curl;
+use Magento\Authorization\Model\UserContextInterface;
+use Magento\User\Model\ResourceModel\User\CollectionFactory as UserCollectionFactory;
 
 class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -15,6 +17,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     const BSECURE_DEV_VIEW_ORDER_URL = 'https://partners-dev.bsecure.app/view-order/';
     const BSECURE_STAGE_VIEW_ORDER_URL = 'https://partners-stage.bsecure.app/view-order/';
     const BSECURE_LIVE_VIEW_ORDER_URL = 'https://partner.bsecure.pk/view-order/';
+    const BSECURE_PLUGIN_STATUS_NEW = 1; // bSecure Server
+    const BSECURE_PLUGIN_STATUS_DISBALED = 3; // bSecure Server
       
     public $baseUrl = "";
 
@@ -22,12 +26,18 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Framework\App\Helper\Context $context,
         \Magento\Framework\App\Config\ConfigResource\ConfigInterface $configInterface,
         \Magento\Framework\Session\SessionManager $sessionManager,
+        UserContextInterface $userContext,
+        UserCollectionFactory $userCollectionFactory,
+        \Psr\Log\LoggerInterface $logger,
         Curl $curl
     ) {
 
         $this->configInterface = $configInterface;
         $this->curl = $curl;
         $this->_session = $sessionManager;
+        $this->userContext = $userContext;
+        $this->userCollectionFactory = $userCollectionFactory;
+        $this->logger = $logger;
         parent::__construct($context);
     }
 
@@ -342,5 +352,130 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             'visible' => true,
             'focused' => false,
         ];
+    }
+
+     /* Admin User info */
+    public function getAdminUserData()
+    {
+        $collection = $this->userCollectionFactory->create();
+        $userId = $this->userContext->getUserId();
+        $collection->addFieldToFilter('main_table.user_id', $userId);
+        $userData = $collection->getFirstItem();
+        return $userData->getData();
+    }
+
+    /**
+     * Send notification at bSecure at Install/Uninstall
+     * @param $notifyType
+     */
+    public function sendNotificationToBsecure($notifyData)
+    {
+        $storeId = $this->getConfig('universalcheckout/general/bsecure_store_id');
+
+        if (empty($storeId)) {
+
+            return false;
+        }
+
+        $response = $this->bsecureGetOauthToken();
+    
+        $validateResponse = $this->validateResponse($response, 'token_request');
+
+        $adminData = $this->getAdminUserData();
+
+        $adminName = "";
+        $adminEmail = "";
+
+        if (!empty($adminData->firstname)) {
+
+            $adminName = $adminData->firstname .' '. $adminData->lastname;
+        }
+
+        if (!empty($adminData->email)) {
+
+            $adminEmail = $adminData->email;
+        }
+
+        $requestData = [
+                
+                'store_id' => $storeId,
+                'status' => $notifyData['status'],
+                'reason' => $notifyData['reason'],
+                'description' => $notifyData['reason_message'],
+                'user_name' => $adminName,
+                'user_email' => $adminEmail
+            ];
+
+        if ($validateResponse['error']) {
+            
+            return false;
+
+        } else {
+
+            $headers =  ['Authorization' => 'Bearer '.$response->access_token];
+
+            $params =   [
+                            'method' => 'POST',
+                            'body' => $requestData,
+                            'headers' => $headers,
+
+                        ];
+
+            $config =  $this->getBsecureConfig();
+            $surveyEndpoint = !empty($config->pluginStatus) ? $config->pluginStatus :
+                              $this->getConfig('universalcheckout/general/bsecure_base_url') .
+                            '/plugin/status';
+           
+            $response = $this->bsecureSendCurlRequest($surveyEndpoint, $params);
+
+            $this->logger->debug("
+                .........surveyEndpoint: ".$surveyEndpoint."..........
+                requestData: ".json_encode($requestData)."..........
+                Response:".json_encode([$response]));
+
+            $validateResponse = $this->validateResponse($response);
+
+            if ($validateResponse['error']) {
+                
+                return false;
+            }
+
+        }
+
+        return false;
+    }
+
+    /**
+     * Send notification at install
+     */
+    public function installNotification()
+    {
+
+        $storeId = $this->getConfig('universalcheckout/general/bsecure_store_id');
+
+        $notifyData = [
+                    'status' => Data::BSECURE_PLUGIN_STATUS_NEW, //Install
+                    'reason' => 'Module Installed',
+                    'reason_message' => 'Module Installed',
+                ];
+        $this->logger->debug("-------------installNotification-----------bsecureStoreId:".$storeId."----------------");
+        $this->sendNotificationToBsecure($notifyData);
+        $this->setConfig('universalcheckout/general/bsecure_installed', 0);
+    }
+
+    /**
+     * Send notification at uninstall
+     */
+    public function unstallNotification()
+    {
+
+        $notifyData = [
+                        'status' => Data::BSECURE_PLUGIN_STATUS_DISBALED, //Uninstall
+                        'reason' => 'Module Uninstalled',
+                        'reason_message' => 'Module Uninstalled',
+                    ];
+
+        $this->logger->debug("-------------unstallNotification-----------");
+        $this->sendNotificationToBsecure($notifyData);
     }
 }

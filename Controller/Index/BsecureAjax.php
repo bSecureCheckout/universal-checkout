@@ -74,7 +74,7 @@ class BsecureAjax extends \Magento\Framework\App\Action\Action
                             $returnRersult = [
                                 'status' => false,
                                  'msg' => __("Your request to bSecure server failed.")
-                                 .'<br>'.esc_html($errorMsg),
+                                 .'<br>'.($errorMsg),
                                  'redirect' => ''];
                         }
                     }
