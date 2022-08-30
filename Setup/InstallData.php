@@ -161,15 +161,11 @@ class InstallData implements InstallDataInterface
         $storeId = $this->bsecureHelper->getConfig('universalcheckout/general/bsecure_store_id');
 
         if (!empty($storeId)) {
-
-            $this->logger->debug("------installNotification at InstallData------storeId: ".$storeId);
+            $this->logger->debug("------installNotification at InstallData------storeId: " . $storeId);
             $this->bsecureHelper->installNotification();
-
         } else {
-
             $this->logger->debug("------bsecure_installed se to 1------");
             $this->bsecureHelper->setConfig('universalcheckout/general/bsecure_installed', 1);
-
         }
     }
 }

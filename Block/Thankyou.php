@@ -1,4 +1,5 @@
 <?php
+
 namespace Bsecure\UniversalCheckout\Block;
 
 class Thankyou extends \Magento\Sales\Block\Order\Totals

@@ -2,12 +2,12 @@
 
 namespace Bsecure\UniversalCheckout\Ui\Component\Listing\Column;
 
-use \Magento\Sales\Api\OrderRepositoryInterface;
-use \Magento\Framework\View\Element\UiComponent\ContextInterface;
-use \Magento\Framework\View\Element\UiComponentFactory;
-use \Magento\Ui\Component\Listing\Columns\Column;
-use \Magento\Framework\Api\SearchCriteriaBuilder;
-use \Magento\Sales\Model\Order;
+use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Framework\View\Element\UiComponent\ContextInterface;
+use Magento\Framework\View\Element\UiComponentFactory;
+use Magento\Ui\Component\Listing\Columns\Column;
+use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Sales\Model\Order;
 
 class BsecureCustomColumn extends Column
 {

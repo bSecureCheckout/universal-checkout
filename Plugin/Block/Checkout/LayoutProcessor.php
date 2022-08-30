@@ -23,18 +23,16 @@ class LayoutProcessor
     {
 
         if ($this->bsecureHelper->getConfig('universalcheckout/general/enable') == 0) {
-
             return $jsLayout;
-           
         }
 
         if ($this->bsecureHelper->getConfig('universalcheckout2/general2/auto_append_country_code') == 0) {
-            
             return $jsLayout;
         }
 
         if (isset($jsLayout['components']['checkout']['children']['steps']['children']['shipping-step']
-            ['children']['shippingAddress']['children']['shipping-address-fieldset']['children'])) {
+            ['children']['shippingAddress']['children']['shipping-address-fieldset']['children'])
+        ) {
             $jsLayout['components']['checkout']['children']['steps']['children']['shipping-step']
             ['children']['shippingAddress']['children']['shipping-address-fieldset']['children']
             ['telephone'] = $this->bsecureHelper->telephoneFieldConfig("shippingAddress");
@@ -42,11 +40,10 @@ class LayoutProcessor
 
         /* config: checkout/options/display_billing_address_on = payment_method */
         if (isset($jsLayout['components']['checkout']['children']['steps']['children']['billing-step']['children']
-            ['payment']['children']['payments-list']['children'])) {
-
+            ['payment']['children']['payments-list']['children'])
+        ) {
             foreach ($jsLayout['components']['checkout']['children']['steps']['children']['billing-step']['children']
                      ['payment']['children']['payments-list']['children'] as $key => $payment) {
-
                 $method = substr($key, 0, -5);
 
                 /* telephone */
@@ -58,8 +55,8 @@ class LayoutProcessor
 
         /* config: checkout/options/display_billing_address_on = payment_page */
         if (isset($jsLayout['components']['checkout']['children']['steps']['children']['billing-step']['children']
-            ['payment']['children']['afterMethods']['children']['billing-address-form'])) {
-
+            ['payment']['children']['afterMethods']['children']['billing-address-form'])
+        ) {
             $method = 'shared';
 
             /* telephone */

@@ -64,7 +64,7 @@ class Webhook extends \Magento\Framework\App\Action\Action
                 if ($order->getStatus() == \Magento\Sales\Model\Order::STATE_CANCELED) {
                     $returnRersult = [
                                         'status' => true,
-                                        'msg' => __("Sorry! Your order has been ".$order->getStatus()),
+                                        'msg' => __("Sorry! Your order has been " . $order->getStatus()),
                                         'bsecure_order_id' => $bsecureOrderId];//phpcs:ignore
                 }
             } else {

@@ -1,4 +1,5 @@
 <?php
+
 namespace Bsecure\UniversalCheckout\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
@@ -29,7 +30,6 @@ class ConfigObserver implements ObserverInterface
         $installed = $this->bsecureHelper->getConfig('universalcheckout/general/bsecure_installed');
 
         if ($installed == 1) {
-        
             $this->bsecureHelper->installNotification();
         }
     }

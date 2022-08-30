@@ -1,4 +1,5 @@
 <?php
+
 namespace Bsecure\UniversalCheckout\Model\Carrier;
 
 use Magento\Quote\Model\Quote\Address\RateRequest;

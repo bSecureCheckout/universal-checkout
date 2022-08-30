@@ -1,4 +1,5 @@
 <?php
+
 namespace Bsecure\UniversalCheckout\Block\Adminhtml\Order;
 
 class Fee extends \Magento\Framework\View\Element\Template
@@ -26,7 +27,6 @@ class Fee extends \Magento\Framework\View\Element\Template
        
         if (!empty($this->_order->getBsecureDiscount())) {
             if ($this->_order->getSubtotal() == $this->_order->getBsecureDiscount()) {
-
                 $fee = new \Magento\Framework\DataObject(
                     [
                         'code' => 'bsecure_discount',
@@ -41,7 +41,6 @@ class Fee extends \Magento\Framework\View\Element\Template
         }
         
         if (!empty($this->_order->getBsecureServiceCharges())) {
-
             $fee = new \Magento\Framework\DataObject(
                 [
                     'code' => 'bsecure_service_charges',

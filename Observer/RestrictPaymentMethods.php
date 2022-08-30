@@ -48,12 +48,11 @@ class RestrictPaymentMethods implements ObserverInterface
         */
 
         if ($code == self::BSECURE_PAYMENT_METHOD &&
-            $this->_state->getAreaCode() === \Magento\Framework\App\Area::AREA_ADMINHTML) {
-
+            $this->_state->getAreaCode() === \Magento\Framework\App\Area::AREA_ADMINHTML
+        ) {
             $checkResult = $observer->getEvent()->getResult();
             
             $checkResult->setData('is_available', false);
-
         }
     }
 }

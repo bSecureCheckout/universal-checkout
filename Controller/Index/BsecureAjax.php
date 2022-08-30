@@ -1,4 +1,5 @@
 <?php
+
 namespace Bsecure\UniversalCheckout\Controller\Index;
 
 class BsecureAjax extends \Magento\Framework\App\Action\Action
@@ -34,11 +35,9 @@ class BsecureAjax extends \Magento\Framework\App\Action\Action
         ];
         
         if ($this->getRequest()->isAjax()) {
-
             $action = filter_var($this->request->getParam('action'), FILTER_SANITIZE_STRING);
 
             if ($action == 'bsecure_send') {
-
                 $config = $this->bsecureHelper->getBsecureConfig();
 
                 $response = $this->bsecureHelper->bsecureGetOauthToken();
@@ -74,13 +73,12 @@ class BsecureAjax extends \Magento\Framework\App\Action\Action
                             $returnRersult = [
                                 'status' => false,
                                  'msg' => __("Your request to bSecure server failed.")
-                                 .'<br>'.($errorMsg),
+                                 . '<br>' . ($errorMsg),
                                  'redirect' => ''];
                         }
                     }
                 }
             }
-            
         }
 
         return $result->setData($returnRersult);

@@ -1,13 +1,12 @@
 <?php
 
-
 namespace Bsecure\UniversalCheckout\Block;
 
-use \Magento\Framework\View\Element\Template;
-use \Magento\Framework\View\Element\Template\Context;
-use \Magento\Framework\Serialize\Serializer\Json;
-use \Bsecure\UniversalCheckout\Helper\Data;
-use \Magento\Directory\Api\CountryInformationAcquirerInterface;
+use Magento\Framework\View\Element\Template;
+use Magento\Framework\View\Element\Template\Context;
+use Magento\Framework\Serialize\Serializer\Json;
+use Bsecure\UniversalCheckout\Helper\Data;
+use Magento\Directory\Api\CountryInformationAcquirerInterface;
 
 class PhoneNumber extends Template
 {

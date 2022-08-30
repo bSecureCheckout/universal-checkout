@@ -20,7 +20,6 @@ class Grid
         $mainTable = $dbPrefix . self::$table;
         
         if ($collection->getMainTable() === $mainTable) {
-
             $collection->addFieldToFilter('status', ['neq' => 'bsecure_draft']);
         }
         return $collection;

@@ -49,7 +49,7 @@ class HandleCheckoutPage implements \Magento\Framework\Event\ObserverInterface
         $validateResponse = $this->bsecureHelper->validateResponse($response, 'token_request');
 
         if ($validateResponse['error']) {
-            $this->messageManager->addError(__('Response Error: '.$validateResponse['msg']));
+            $this->messageManager->addError(__('Response Error: ' . $validateResponse['msg']));
             $this->redirect->redirect($controller->getResponse(), 'checkout/cart');
         } else {
             // @codingStandardsIgnoreStart
@@ -62,7 +62,7 @@ class HandleCheckoutPage implements \Magento\Framework\Event\ObserverInterface
             $validateResponse = $this->bsecureHelper->validateResponse($response);
 
             if ($validateResponse['error']) {
-                $this->messageManager->addError(__('Response Error: '.$validateResponse['msg']));
+                $this->messageManager->addError(__('Response Error: ' . $validateResponse['msg']));
                 $this->redirect->redirect($controller->getResponse(), 'checkout/cart');
             } else {
                 if (!empty($response->body->order_reference)) {

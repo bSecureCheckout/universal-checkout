@@ -60,14 +60,14 @@ class Checkout extends \Magento\Framework\App\Action\Action
         $validateResponse = $this->bsecureHelper->validateResponse($response, 'token_request');
 
         if ($validateResponse['error']) {
-            return $this->getResponse()->setBody(__('Response Error: '.$validateResponse['msg']));
+            return $this->getResponse()->setBody(__('Response Error: ' . $validateResponse['msg']));
         } else {
             // Get Order //
             // @codingStandardsIgnoreStart
             $this->accessToken = $response->access_token;
             // @codingStandardsIgnoreEnd
 
-            $headers =    ['Authorization' => 'Bearer '.$this->accessToken];
+            $headers =    ['Authorization' => 'Bearer ' . $this->accessToken];
 
             $requestData['order_ref'] = $bsecureOrderRef;
 
@@ -86,16 +86,15 @@ class Checkout extends \Magento\Framework\App\Action\Action
             $validateResponse = $this->bsecureHelper->validateResponse($response);
 
             if ($validateResponse['error']) {
-                return $this->getResponse()->setBody(__('Response Error: '.$validateResponse['msg']));
+                return $this->getResponse()->setBody(__('Response Error: ' . $validateResponse['msg']));
             } else {
                 $orderData = $response->body;
                 
                 $validateOrderData = $this->orderHelper->validateOrderData($orderData);
 
                 if (!empty($validateOrderData['status'])) {
-                    return $this->getResponse()->setBody(__('Error: '.$validateOrderData['msg']));
+                    return $this->getResponse()->setBody(__('Error: ' . $validateOrderData['msg']));
                 } else {
-
                     if (!empty($orderData->placement_status)) {
                         if ($orderData->placement_status == 2 || $orderData->placement_status == 1) {
                             $this->messageManager->addError(__("Sorry! Your order has not been proccessed."));
@@ -118,12 +117,11 @@ class Checkout extends \Magento\Framework\App\Action\Action
                         $this->_clearQuote();
 
                         if ($order->getStatus() == \Magento\Sales\Model\Order::STATE_CANCELED) {
-                            $this->messageManager->addError(__("Sorry! Your order has been ".$order->getStatus()));
+                            $this->messageManager->addError(__("Sorry! Your order has been " . $order->getStatus()));
                             $this->_redirect('checkout/cart');
                         }
 
                         $this->_redirect('checkout/onepage/success');
-
                     } else {
                         $this->messageManager->addError(__("Unable to create order at this moment please try again."));
                         $this->_redirect('checkout/cart');

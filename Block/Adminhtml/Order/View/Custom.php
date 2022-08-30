@@ -35,11 +35,9 @@ class Custom extends \Magento\Backend\Block\Template
         $bSecureOrderViewUrl = "";
         $configPath = 'universalcheckout/general/';
         $bsecureBaseUrlKey = 'bsecure_base_url';
-        $bsecureBaseUrl = $this->bsecureHelper->getConfig($configPath.$bsecureBaseUrlKey);
+        $bsecureBaseUrl = $this->bsecureHelper->getConfig($configPath . $bsecureBaseUrlKey);
         if (!empty($order->getData("bsecure_order_ref"))) {
-
             switch ($bsecureBaseUrl) {
-
                 case 'https://api-dev.bsecure.app/v1':
                     $bSecureOrderViewUrl = $this->bsecureHelper::BSECURE_DEV_VIEW_ORDER_URL;
                     break;
@@ -53,7 +51,7 @@ class Custom extends \Magento\Backend\Block\Template
                     break;
             }
             
-            $bSecureOrderViewUrl = $bSecureOrderViewUrl.$order->getData("bsecure_order_ref");
+            $bSecureOrderViewUrl = $bSecureOrderViewUrl . $order->getData("bsecure_order_ref");
         }
 
         return $bSecureOrderViewUrl;
