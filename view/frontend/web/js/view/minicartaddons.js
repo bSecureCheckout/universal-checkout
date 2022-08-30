@@ -3,21 +3,21 @@ define([
        'uiComponent',
        'Magento_Customer/js/customer-data',
    ], function (ko, Component, customerData) {
-       'use strict';      
+       'use strict';
       
-       return Component.extend({          
+       return Component.extend({
            /**
             * @override
             */
-           initialize: function () {
-               this._super();
-               this.cart = customerData.get('cart');
-           },
-           getTotalCartItems: function () {
+            initialize: function () {
+                this._super();
+                this.cart = customerData.get('cart');
+            },
+            getTotalCartItems: function () {
 
-               return customerData.get('cart')().summary_count;
-           }                    
+                return customerData.get('cart')().summary_count;
+            }
 
             
-       });
+        });
    });

@@ -49,7 +49,7 @@ class BsecurePopupWindow extends Template
 
     public function getBsecureSettings($key, $path = 'universalcheckout/general/')
     {
-        return $this->bsecureHelper->getConfig($path.$key);
+        return $this->bsecureHelper->getConfig($path . $key);
     }
 
     public function isHostedWindow()

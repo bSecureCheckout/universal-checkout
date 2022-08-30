@@ -1,4 +1,5 @@
 <?php
+
 namespace Bsecure\UniversalCheckout\Api;
  
 interface PostManagementInterface
@@ -7,7 +8,8 @@ interface PostManagementInterface
     /**
      * @api
      * @param string $sku
-     * @return array
+     * @return mixed[]
+     * @since 1.0.0
      */
     
     public function getPost($sku);
@@ -16,6 +18,7 @@ interface PostManagementInterface
      * Post for product api
      * @param string POST
      * @return mixed[]
+     * @since 1.0.0
      */
     
     public function manageOrder();

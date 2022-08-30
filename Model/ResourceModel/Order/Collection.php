@@ -1,8 +1,10 @@
 <?php
+
 /**
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Bsecure\UniversalCheckout\Model\ResourceModel\Order;
 
 use Magento\Framework\DB\Select;

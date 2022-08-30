@@ -33,7 +33,7 @@
 
 img.wc-bsecure-checkout-btn-mini-cart {
 
-  box-shadow:none !important; 
+  box-shadow:none !important;
   background:none !important;
 }
 
@@ -44,7 +44,7 @@ img.wc-bsecure-checkout-btn-mini-cart {
 }
 
 
-.bsecure-popup-overlay 
+.bsecure-popup-overlay
 {
     position: fixed;
     height: 100%;

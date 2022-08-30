@@ -174,14 +174,11 @@ class BsecureLogin extends \Magento\Framework\App\Action\Action
                  Please try again later."));
             }
         } elseif ($login == 1) {
-
             $redirectUrl = $this->bsecureHelper->buildBsecureRedirectUrl();
             $resultRedirect = $this->resultRedirectFactory->create();
             $resultRedirect->setUrl($redirectUrl);
             return $resultRedirect;
-
         } else {
-
             $this->redirectToMyAccountPage(__('You have cancelled to login with bSecure!'));
         }
     }
@@ -213,9 +210,9 @@ class BsecureLogin extends \Magento\Framework\App\Action\Action
         // @codingStandardsIgnoreEnd
         
         $baseUrl = $this->bsecureHelper->getConfig('universalcheckout/general/bsecure_base_url');
-        $url = $baseUrl.$this->getCustomerEndpoint;
+        $url = $baseUrl . $this->getCustomerEndpoint;
 
-        $headers =    ['Authorization' => 'Bearer '.$this->accessToken];
+        $headers =    ['Authorization' => 'Bearer ' . $this->accessToken];
 
         $params = [
             'sslverify' => false,
@@ -229,7 +226,7 @@ class BsecureLogin extends \Magento\Framework\App\Action\Action
         $validateResponse = $this->bsecureHelper->validateResponse($response);
 
         if ($validateResponse['error']) {
-            $this->redirectToMyAccountPage(__('Response Error: ').$validateResponse['msg']);
+            $this->redirectToMyAccountPage(__('Response Error: ') . $validateResponse['msg']);
         } else {
             return ( !empty($response->body) ) ? $response->body : false;
         }

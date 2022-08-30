@@ -30,7 +30,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
                     [
                         'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
                         'length' => 255,
-                        'comment' =>'bSecure order reference'
+                        'comment' => 'bSecure order reference'
                     ]
                 );
             //Order table
@@ -41,7 +41,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
                     [
                         'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
                         'length' => 255,
-                        'comment' =>'bSecure order type'
+                        'comment' => 'bSecure order type'
                     ]
                 );
 
@@ -53,7 +53,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
                     [
                         'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
                         'length' => 255,
-                        'comment' =>'bSecure order id'
+                        'comment' => 'bSecure order id'
                     ]
                 );
 
@@ -65,7 +65,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
                     [
                         'type' => \Magento\Framework\DB\Ddl\Table::TYPE_DECIMAL,
                         'length' => '20,4',
-                        'comment' =>'bSecure Service Charges'
+                        'comment' => 'bSecure Service Charges'
                     ]
                 );
 
@@ -77,7 +77,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
                     [
                         'type' => \Magento\Framework\DB\Ddl\Table::TYPE_DECIMAL,
                         'length' => '20,4',
-                        'comment' =>'bSecure Discount'
+                        'comment' => 'bSecure Discount'
                     ]
                 );
 
@@ -89,7 +89,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
                     [
                         'type' => \Magento\Framework\DB\Ddl\Table::TYPE_DECIMAL,
                         'length' => '20,4',
-                        'comment' =>'bSecure Service Charges'
+                        'comment' => 'bSecure Service Charges'
                     ]
                 );
 
@@ -101,7 +101,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
                     [
                         'type' => \Magento\Framework\DB\Ddl\Table::TYPE_DECIMAL,
                         'length' => '20,4',
-                        'comment' =>'bSecure Discount'
+                        'comment' => 'bSecure Discount'
                     ]
                 );
 
@@ -113,7 +113,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
                     [
                         'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
                         'length' => 255,
-                        'comment' =>'bSecure order id'
+                        'comment' => 'bSecure order id'
                     ]
                 );
 

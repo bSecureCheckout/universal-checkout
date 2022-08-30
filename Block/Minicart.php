@@ -8,7 +8,7 @@ class Minicart extends \Magento\Framework\View\Element\Template
     protected $bsecureHelper;
 
     public function __construct(
-        \Magento\Framework\View\Element\Template\Context  $context,
+        \Magento\Framework\View\Element\Template\Context $context,
         \Magento\Checkout\Helper\Cart $cartHelper,
         \Bsecure\UniversalCheckout\Helper\Data $bsecureHelper,
         \Magento\Framework\View\Asset\Repository $assetRepo,
@@ -33,7 +33,7 @@ class Minicart extends \Magento\Framework\View\Element\Template
 
     public function getBsecureSettings($key, $path = 'universalcheckout/general/')
     {
-        return $this->bsecureHelper->getConfig($path.$key);
+        return $this->bsecureHelper->getConfig($path . $key);
     }
 
     public function getCartCount()
@@ -60,16 +60,20 @@ class Minicart extends \Magento\Framework\View\Element\Template
             'bsecure_checkout_btn_url'
         );
 
-        $checkoutBtnUrl = !empty($checkoutBtnUrl) ? $checkoutBtnUrl.'?v='.random_int(0, 100000000) :
+        $queryString = "&";
+
+        if (strpos($checkoutBtnUrl, "?") === false) {
+            $queryString = "?";
+        }
+
+        $checkoutBtnUrl = !empty($checkoutBtnUrl) ? $checkoutBtnUrl . $queryString . 'v=' . random_int(0, 100000000) :
                           $this->assetRepo->getUrl($this->bsecureHelper::BTN_BUY_WITH_BSECURE);
 
         if ($moduleEnabled) {
-                         
             $bsecureCheckoutBtn = '<a href="javascript:;" class="minicart-area bsecure-checkout-button">';
-            $bsecureCheckoutBtn .= '<img data-role="proceed-to-checkout" title="'.$title.'"';
-            $bsecureCheckoutBtn .= 'alt="'.$title.'" class="primary checkout"';
-            $bsecureCheckoutBtn .= 'src="'.$checkoutBtnUrl.'" /></a>';
-
+            $bsecureCheckoutBtn .= '<img data-role="proceed-to-checkout" title="' . $title . '"';
+            $bsecureCheckoutBtn .= 'alt="' . $title . '" class="primary checkout"';
+            $bsecureCheckoutBtn .= 'src="' . $checkoutBtnUrl . '" /></a>';
         }
 
         return $bsecureCheckoutBtn;

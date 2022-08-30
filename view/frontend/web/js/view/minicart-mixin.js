@@ -24,11 +24,10 @@ define([
                 type: 'POST',
                 async: false,
                 dataType: 'json',
-                success: function(data, status, xhr) {
+                success: function (data, status, xhr) {
                      
-                    if(data.success){
+                    if (data.success) {
                         sessionData = data.sessionData;
-                        
                     }
                 },
                 error: function (xhr, status, errorThrown) {
@@ -41,10 +40,9 @@ define([
             //You can use 'sessionData' in your condition
             //console.log('sessionData out:',sessionData);
             var obj = {'isactive':true,'img':'http://google.com,'}
-            if(sessionData){
-
+            if (sessionData) {
                 return true; //hide button
-            }else {
+            } else {
                 return false;  //show button
             }
         }

@@ -4,8 +4,8 @@ namespace Bsecure\UniversalCheckout\Controller\Index;
 
 use Magento\Framework\App\Action\Context;
 use Magento\Framework\Session\SessionManager;
-use \Magento\Framework\View\Result\PageFactory;
-use \Bsecure\UniversalCheckout\Helper\Data as BsecureHelper;
+use Magento\Framework\View\Result\PageFactory;
+use Bsecure\UniversalCheckout\Helper\Data as BsecureHelper;
 
 class CheckoutBtn extends \Magento\Framework\App\Action\Action
 {
@@ -35,7 +35,14 @@ class CheckoutBtn extends \Magento\Framework\App\Action\Action
         $showCheckoutBtn = $this->bsecureHelper->getConfig('universalcheckout/general/show_checkout_btn');
         $btnBuyWithBsecure = $this->bsecureHelper::BTN_BUY_WITH_BSECURE;
         $checkoutBtnUrl = $this->bsecureHelper->getConfig('universalcheckout/general/bsecure_checkout_btn_url');
-        $checkoutBtnUrl = !empty($checkoutBtnUrl) ? $checkoutBtnUrl.'?v='.random_int(0, 100000000) :
+
+        $queryString = "&";
+
+        if (strpos($checkoutBtnUrl, "?") === false) {
+            $queryString = "?";
+        }
+
+        $checkoutBtnUrl = !empty($checkoutBtnUrl) ? $checkoutBtnUrl . $queryString . 'v=' . random_int(0, 100000000) :
                           $this->assetRepo->getUrlWithParams($btnBuyWithBsecure, $params);
 
         if ($moduleEnabled == 1 && $showCheckoutBtn == $this->bsecureHelper::BTN_SHOW_BSECURE_BOTH) {

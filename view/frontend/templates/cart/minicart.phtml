@@ -28,7 +28,14 @@
 
         $checkoutBtnUrl    = $block->
                               getBsecureSettings('bsecure_checkout_btn_url');
-        $checkoutBtnUrl     = !empty($checkoutBtnUrl) ? $checkoutBtnUrl.'?v='.random_int(0, 100000000) :
+        $queryString = "&";
+
+        if (strpos($checkoutBtnUrl, "?") === false) {
+
+            $queryString = "?";
+        }
+
+        $checkoutBtnUrl     = !empty($checkoutBtnUrl) ? $checkoutBtnUrl.$queryString.'v='.random_int(0, 100000000) :
                               $block->escapeHtmlAttr(
                                   $block->getViewFileUrl($bsecureHelper::BTN_BUY_WITH_BSECURE)
                               );

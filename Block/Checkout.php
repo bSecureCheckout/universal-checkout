@@ -8,7 +8,7 @@ class Checkout extends \Magento\Framework\View\Element\Template
     protected $bsecureHelper;
 
     public function __construct(
-        \Magento\Framework\View\Element\Template\Context  $context,
+        \Magento\Framework\View\Element\Template\Context $context,
         \Bsecure\UniversalCheckout\Helper\Data $bsecureHelper,
         \Magento\Checkout\Block\Onepage\Link $onePageLink,
         array $data = []
@@ -26,7 +26,7 @@ class Checkout extends \Magento\Framework\View\Element\Template
 
     public function getBsecureSettings($key, $path = 'universalcheckout/general/')
     {
-        return $this->bsecureHelper->getConfig($path.$key);
+        return $this->bsecureHelper->getConfig($path . $key);
     }
 
     public function getOnePageLink()

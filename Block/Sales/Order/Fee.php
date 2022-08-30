@@ -33,7 +33,6 @@ class Fee extends \Magento\Framework\View\Element\Template
         $store = $this->getStore();
 
         if (!empty($this->_order->getBsecureServiceCharges())) {
-
             $fee = new \Magento\Framework\DataObject(
                 [
                     'code' => 'bsecure_service_charges',

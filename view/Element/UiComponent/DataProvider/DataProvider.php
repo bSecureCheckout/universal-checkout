@@ -1,4 +1,5 @@
 <?php
+
 namespace Bsecure\UniversalCheckout\view\Element\UiComponent\DataProvider;
 
 use Magento\Framework\Api\FilterBuilder;

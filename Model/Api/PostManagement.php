@@ -29,12 +29,12 @@ class PostManagement implements PostManagementInterface
         $this->json                 = $json;
         $this->request              = $request;
     }
-
-    // @codingStandardsIgnoreStart
+    
     /**
      * @api
      * @param string $sku
-     * @return array
+     * @return mixed[]
+     * @since 1.0.0
      */
     public function getPost($sku)
     {
@@ -79,7 +79,6 @@ class PostManagement implements PostManagementInterface
         $isSalable = $product->isSalable();
 
         if (! $isSalable) {
-
             $returnRersult = [
                                 'status' => false,
                                 "msg" => __("Product is not salable"),
@@ -90,7 +89,6 @@ class PostManagement implements PostManagementInterface
         }
 
         if (! $productIsInStock) {
-
             $returnRersult = [
                                 'status' => false,
                                 "msg" => __("Product is out of stock"),
@@ -118,14 +116,19 @@ class PostManagement implements PostManagementInterface
 
         $returnRersult = [
                             'status' => true,
-                            "msg" => __("Product is ".$inStockLabel),
+                            "msg" => __("Product is " . $inStockLabel),
                             'product_details' => $productInfo
                         ];
         http_response_code(200);
         return json_encode($returnRersult);
     }
-
-    // @codingStandardsIgnoreEnd
+   
+    /**
+     * Post for product api
+     * @param string POST
+     * @return mixed[]
+     * @since 1.0.0
+     */
 
     public function manageOrder()
     {
@@ -150,17 +153,13 @@ class PostManagement implements PostManagementInterface
         if (!empty($validateOrderData['status'])) {
             $returnRersult = $validateOrderData;
         } else {
-
             if ($orderData->placement_status == 2) {
-
                 $msg = __("Sorry! Your order has not been proccessed.");
                 $returnRersult = [
                                 'status' => false,
                                 'msg' => __($msg)
                             ];
-                
             } else {
-
                 $orderId = $this->orderHelper->createMagentoOrder($orderData);
 
                 if ($orderId > 0) {
@@ -177,11 +176,10 @@ class PostManagement implements PostManagementInterface
                     if ($order->getStatus() == \Magento\Sales\Model\Order::STATE_CANCELED) {
                         $returnRersult = [
                                             'status' => true,
-                                            'msg' => __("Sorry! Your order has been ".$order->getStatus()),
+                                            'msg' => __("Sorry! Your order has been " . $order->getStatus()),
                                             'bsecure_order_id' => $bsecureOrderId
                                         ];
                     }
-
                 } else {
                     $msg = __("Unable to create order at magento. Please contact administrator or retry");
                     $returnRersult = [

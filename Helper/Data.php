@@ -6,15 +6,21 @@
 namespace Bsecure\UniversalCheckout\Helper;
 
 use Magento\Framework\HTTP\Client\Curl;
+use Magento\Authorization\Model\UserContextInterface;
+use Magento\User\Model\ResourceModel\User\CollectionFactory as UserCollectionFactory;
 
 class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
+    const PLUGIN_NAME = 'Magento';
+    const PLUGIN_VERSION = '2.0.0';
     const BTN_SHOW_BSECURE_ONLY = 'bsecure_only';
     const BTN_SHOW_BSECURE_BOTH = 'bsecure_mag_both';
     const BTN_BUY_WITH_BSECURE = 'Bsecure_UniversalCheckout::images/bsecure-checkout-img.svg';
     const BSECURE_DEV_VIEW_ORDER_URL = 'https://partners-dev.bsecure.app/view-order/';
     const BSECURE_STAGE_VIEW_ORDER_URL = 'https://partners-stage.bsecure.app/view-order/';
     const BSECURE_LIVE_VIEW_ORDER_URL = 'https://partner.bsecure.pk/view-order/';
+    const BSECURE_PLUGIN_STATUS_NEW = 1; // bSecure Server
+    const BSECURE_PLUGIN_STATUS_DISBALED = 3; // bSecure Server
       
     public $baseUrl = "";
 
@@ -22,12 +28,18 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Framework\App\Helper\Context $context,
         \Magento\Framework\App\Config\ConfigResource\ConfigInterface $configInterface,
         \Magento\Framework\Session\SessionManager $sessionManager,
+        UserContextInterface $userContext,
+        UserCollectionFactory $userCollectionFactory,
+        \Psr\Log\LoggerInterface $logger,
         Curl $curl
     ) {
 
         $this->configInterface = $configInterface;
         $this->curl = $curl;
         $this->_session = $sessionManager;
+        $this->userContext = $userContext;
+        $this->userCollectionFactory = $userCollectionFactory;
+        $this->logger = $logger;
         parent::__construct($context);
     }
 
@@ -62,12 +74,18 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $this->curl->setOption(CURLOPT_SSL_VERIFYHOST, false); // ssl verfication is off for local setup
             $this->curl->setOption(CURLOPT_SSL_VERIFYPEER, false);
 
+            $pluginInfo = ['x-plugin-name' => Data::PLUGIN_NAME, 'x-plugin-version' => Data::PLUGIN_VERSION];
+            
             if (!empty($params['headers'])) {
                 if (is_array($params['headers'])) {
+                    $params['headers'] =  array_merge($pluginInfo, $params['headers']);
                     $this->curl->setHeaders($params['headers']);
                 } else {
                     $this->curl->addHeader($params['headers']);
                 }
+            } else {
+                $params['headers'] =  $pluginInfo;
+                $this->curl->setHeaders($params['headers']);
             }
 
             if (!empty($params['method'])) {
@@ -110,7 +128,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $clientId      = $this->getConfig('universalcheckout/general/bsecure_client_id');
         $clientSecret  = $this->getConfig('universalcheckout/general/bsecure_client_secret');
         $bsecureStoreId  = $this->getConfig('universalcheckout/general/bsecure_store_id');
-        $clientId       = !empty($bsecureStoreId) ? $clientId.':'.$bsecureStoreId : $clientId;
+        $clientId       = !empty($bsecureStoreId) ? $clientId . ':' . $bsecureStoreId : $clientId;
 
         $config = $this->getBsecureConfig();
 
@@ -132,13 +150,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $response = $this->bsecureSendCurlRequest($oauthUrl, $params);
 
         if (!empty($response->body)) {
-
             if (!empty($response->body->checkout_btn)) {
                 $this->setConfig(
                     'universalcheckout/general/bsecure_checkout_btn_url',
                     $response->body->checkout_btn
                 );
-                
             }
 
             return $response->body;
@@ -159,7 +175,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $this->baseUrl = $this->getConfig('universalcheckout/general/bsecure_base_url');
 
         if (!empty($this->baseUrl)) {
-            $url = $this->baseUrl."/plugin/configuration";
+            $url = $this->baseUrl . "/plugin/configuration";
            
             $response = $this->bsecureSendCurlRequest($url);
             
@@ -235,11 +251,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $config = $this->getBsecureConfig();
         $ssoEndpoint = !empty($config->ssoLogin) ? $config->ssoLogin : "/";
 
-        $clientId       = !empty($bsecureStoreId) ? $clientId.':'.$bsecureStoreId : $clientId;
+        $clientId       = !empty($bsecureStoreId) ? $clientId . ':' . $bsecureStoreId : $clientId;
         
         $responseType  = 'code';
         $sessioinId    = $this->_session->getSessionId();
-        $state          = base64_encode("state-".$sessioinId);
+        $state          = base64_encode("state-" . $sessioinId);
         $scope          = 'profile';
 
         $ssoEndpoint = $ssoEndpoint . '?scope=' .
@@ -257,7 +273,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
 
         $sessioinId    = $this->_session->getSessionId();
-        $state          = base64_encode("state-".$sessioinId);
+        $state          = base64_encode("state-" . $sessioinId);
         
         if ($returnedState != $state) {
             return false;
@@ -273,10 +289,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
 
         if (preg_match('/^\+\d+$/', $phoneNumber)) {
-
             if (!empty($countryCode)) {
-
-                 return str_replace('+'.$countryCode, '', $phoneNumber);
+                 return str_replace('+' . $countryCode, '', $phoneNumber);
             }
 
             return $phoneNumber;
@@ -297,11 +311,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     public function phoneWithCountryCode($phoneNumber, $countryCode = '92')
     {
         if (preg_match('/^\+\d+$/', $phoneNumber)) {
-
             return $phoneNumber;
         }
 
-        $phoneNumber = '+'.$countryCode.$phoneNumber;
+        $phoneNumber = '+' . $countryCode . $phoneNumber;
 
         return $phoneNumber;
     }
@@ -342,5 +355,122 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             'visible' => true,
             'focused' => false,
         ];
+    }
+
+     /* Admin User info */
+    public function getAdminUserData()
+    {
+        $collection = $this->userCollectionFactory->create();
+        $userId = $this->userContext->getUserId();
+        $collection->addFieldToFilter('main_table.user_id', $userId);
+        $userData = $collection->getFirstItem();
+        return $userData->getData();
+    }
+
+    /**
+     * Send notification at bSecure at Install/Uninstall
+     * @param $notifyType
+     */
+    public function sendNotificationToBsecure($notifyData)
+    {
+        $storeId = $this->getConfig('universalcheckout/general/bsecure_store_id');
+
+        if (empty($storeId)) {
+            return false;
+        }
+
+        $response = $this->bsecureGetOauthToken();
+    
+        $validateResponse = $this->validateResponse($response, 'token_request');
+
+        $adminData = $this->getAdminUserData();
+
+        $adminName = "";
+        $adminEmail = "";
+
+        if (!empty($adminData->firstname)) {
+            $adminName = $adminData->firstname . ' ' . $adminData->lastname;
+        }
+
+        if (!empty($adminData->email)) {
+            $adminEmail = $adminData->email;
+        }
+
+        $requestData = [
+                
+                'store_id' => $storeId,
+                'status' => $notifyData['status'],
+                'reason' => $notifyData['reason'],
+                'description' => $notifyData['reason_message'],
+                'user_name' => $adminName,
+                'user_email' => $adminEmail
+            ];
+
+        if ($validateResponse['error']) {
+            return false;
+        } else {
+            $headers =  ['Authorization' => 'Bearer ' . $response->access_token];
+
+            $params =   [
+                            'method' => 'POST',
+                            'body' => $requestData,
+                            'headers' => $headers,
+
+                        ];
+
+            $config =  $this->getBsecureConfig();
+            $surveyEndpoint = !empty($config->pluginStatus) ? $config->pluginStatus :
+                              $this->getConfig('universalcheckout/general/bsecure_base_url') .
+                            '/plugin/status';
+           
+            $response = $this->bsecureSendCurlRequest($surveyEndpoint, $params);
+
+            $this->logger->debug("
+                .........surveyEndpoint: " . $surveyEndpoint . "..........
+                requestData: " . json_encode($requestData) . "..........
+                Response:" . json_encode([$response]));
+
+            $validateResponse = $this->validateResponse($response);
+
+            if ($validateResponse['error']) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Send notification at install
+     */
+    public function installNotification()
+    {
+
+        $storeId = $this->getConfig('universalcheckout/general/bsecure_store_id');
+
+        $notifyData = [
+                    'status' => Data::BSECURE_PLUGIN_STATUS_NEW, //Install
+                    'reason' => 'Module Installed',
+                    'reason_message' => 'Module Installed',
+                ];
+        $this->logger->debug("-----installNotification-----bsecureStoreId:" . $storeId . "------");
+        $this->sendNotificationToBsecure($notifyData);
+        $this->setConfig('universalcheckout/general/bsecure_installed', 0);
+    }
+
+    /**
+     * Send notification at uninstall
+     */
+    public function unstallNotification()
+    {
+
+        $notifyData = [
+                        'status' => Data::BSECURE_PLUGIN_STATUS_DISBALED, //Uninstall
+                        'reason' => 'Module Uninstalled',
+                        'reason_message' => 'Module Uninstalled',
+                    ];
+
+        $this->logger->debug("-------------unstallNotification-----------");
+        $this->sendNotificationToBsecure($notifyData);
     }
 }
