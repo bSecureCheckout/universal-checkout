@@ -2,6 +2,7 @@ var bsecureWindow = "";
 require([
   'jquery',
   'jquery/ui',
+  'intlTelInput',
 ], function ($) {
 
     if (document.location.hash == '#bsecure-auto-checkout') {
