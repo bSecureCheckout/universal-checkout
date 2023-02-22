@@ -80,7 +80,7 @@ class Sidebar extends Template
 
         $queryString = "&";
 
-        if (strpos($checkoutBtnUrl, "?") === false) {
+        if (!empty($checkoutBtnUrl) && str_contains($checkoutBtnUrl, "?") === false) {
             $queryString = "?";
         }
 
