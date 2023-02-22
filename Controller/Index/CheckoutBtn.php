@@ -38,7 +38,7 @@ class CheckoutBtn extends \Magento\Framework\App\Action\Action
 
         $queryString = "&";
 
-        if (strpos($checkoutBtnUrl, "?") === false) {
+        if (!empty($checkoutBtnUrl) && str_contains($checkoutBtnUrl, "?") === false) {
             $queryString = "?";
         }
 

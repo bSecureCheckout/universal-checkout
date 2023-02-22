@@ -62,7 +62,7 @@ class Minicart extends \Magento\Framework\View\Element\Template
 
         $queryString = "&";
 
-        if (strpos($checkoutBtnUrl, "?") === false) {
+        if (!empty($checkoutBtnUrl) && str_contains($checkoutBtnUrl, "?") === false) {
             $queryString = "?";
         }
 
