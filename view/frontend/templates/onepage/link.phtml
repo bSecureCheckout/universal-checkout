@@ -14,8 +14,7 @@ if ($block->getOnePageLink()->isPossibleOnepageCheckout()):
     $checkoutBtnUrl =  $block->
                         getBsecureSettings('bsecure_checkout_btn_url');
     $queryString = "&";
-
-    if (!empty($checkoutBtnUrl) && str_contains($checkoutBtnUrl, "?") === false) {
+    if (!empty($checkoutBtnUrl)  && str_contains($checkoutBtnUrl, "?") === false) {
 
         $queryString = "?";
     }
