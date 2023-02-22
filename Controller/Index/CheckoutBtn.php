@@ -37,8 +37,7 @@ class CheckoutBtn extends \Magento\Framework\App\Action\Action
         $checkoutBtnUrl = $this->bsecureHelper->getConfig('universalcheckout/general/bsecure_checkout_btn_url');
 
         $queryString = "&";
-
-        if (strpos($checkoutBtnUrl, "?") === false) {
+        if (!empty($checkoutBtnUrl) && str_contains($checkoutBtnUrl, "?") === false) {
             $queryString = "?";
         }
 
