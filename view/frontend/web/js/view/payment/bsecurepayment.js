@@ -13,7 +13,8 @@ define(
     ],
     function (
         Component,
-        rendererList
+        rendererList,
+        ko
     ) {
         'use strict';
         rendererList.push(

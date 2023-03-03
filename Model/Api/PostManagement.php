@@ -53,7 +53,7 @@ class PostManagement implements PostManagementInterface
             return json_encode($returnRersult);
         }
 
-        if (!filter_var($sku, FILTER_SANITIZE_STRING)) {
+        if (!filter_var($sku, FILTER_SANITIZE_SPECIAL_CHARS)) {
             $returnRersult = [
                                 'status' => false,
                                 "msg" => __("Invalid sku provided!")

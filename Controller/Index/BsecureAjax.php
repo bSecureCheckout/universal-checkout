@@ -35,7 +35,7 @@ class BsecureAjax extends \Magento\Framework\App\Action\Action
         ];
         
         if ($this->getRequest()->isAjax()) {
-            $action = filter_var($this->request->getParam('action'), FILTER_SANITIZE_STRING);
+            $action = filter_var($this->request->getParam('action'), FILTER_SANITIZE_SPECIAL_CHARS);
 
             if ($action == 'bsecure_send') {
                 $config = $this->bsecureHelper->getBsecureConfig();

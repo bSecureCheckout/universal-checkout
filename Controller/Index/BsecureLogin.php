@@ -57,9 +57,9 @@ class BsecureLogin extends \Magento\Framework\App\Action\Action
             $this->redirectToMyAccountPage();
         }
 
-        $state = filter_var($this->request->getParam('state'), FILTER_SANITIZE_STRING);
-        $code = filter_var($this->request->getParam('code'), FILTER_SANITIZE_STRING);
-        $login = filter_var($this->request->getParam('login'), FILTER_SANITIZE_STRING);
+        $state = filter_var($this->request->getParam('state'), FILTER_SANITIZE_SPECIAL_CHARS);
+        $code = filter_var($this->request->getParam('code'), FILTER_SANITIZE_SPECIAL_CHARS);
+        $login = filter_var($this->request->getParam('login'), FILTER_SANITIZE_SPECIAL_CHARS);
 
         if (!empty($state) && !empty($code)) {
             if ($this->bsecureHelper->validateState($state)) {
