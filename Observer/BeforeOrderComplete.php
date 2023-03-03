@@ -3,10 +3,12 @@
 namespace Bsecure\UniversalCheckout\Observer;
 
 use Magento\Sales\Model\Order;
+use Magento\Framework\Exception\InputException;
 
 class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
 {
     protected $_request;
+    protected $_state;
 
     public function __construct(
         \Magento\Framework\Registry $registry,
@@ -18,7 +20,9 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
         \Bsecure\UniversalCheckout\Helper\Data $bsecureHelper,
         \Bsecure\UniversalCheckout\Helper\OrderHelper $orderHelper,
         \Magento\Framework\Message\ManagerInterface $messageManager,
-        \Magento\Framework\App\Request\Http $request
+        \Magento\Framework\App\Request\Http $request,
+        \Magento\Framework\App\State $state
+        
     ) {
 
         $this->_storeManager = $storeManager;
@@ -30,10 +34,18 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
         $this->orderHelper = $orderHelper;
         $this->messageManager = $messageManager;
         $this->_request  = $request;
+        $this->_state = $state;
+        
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
+        // if request form admin end then do nothing
+        if($this->_state->getAreaCode() == \Magento\Framework\App\Area::AREA_ADMINHTML){
+
+            return true;
+        }
+
         $orderData = json_decode($this->_request->getContent());
         /*
         Make sure order is not from bsecure server this observer
@@ -72,6 +84,8 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
 
                     $response = $this->sendPaymentRequestBsecure($requestData);
 
+                    //var_dump(' $response:', $response); die;
+
                     if (!empty($response->order_reference)) {
                         $details =  [
                                     '_bsecure_order_ref' => $response->order_reference,
@@ -89,6 +103,7 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
                 }
             }
         }
+       
     }
 
     private function getOrderPayLoad($quote, $orderIncrementId)
@@ -170,7 +185,8 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
         $validateResponse = $this->bsecureHelper->validateResponse($response, 'token_request');
 
         if ($validateResponse['error']) {
-            $this->messageManager->addError($validateResponse['msg']);
+            throw new InputException(__($validateResponse['msg']));
+            $this->messageManager->addErrorMessage($validateResponse['msg']);
             return false;
         } else {
             $headers =  ['Authorization' => 'Bearer ' . $response->access_token];
@@ -191,7 +207,9 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
             $validateResponse = $this->bsecureHelper->validateResponse($response);
 
             if ($validateResponse['error']) {
-                $this->messageManager->addError($validateResponse['msg']);
+                //$this->checkoutSession->setErrorMessage($validateResponse['msg']);
+                throw new InputException(__($validateResponse['msg']));
+                $this->messageManager->addErrorMessage($validateResponse['msg']);
                 return false;
             } else {
                 if (!empty($response->body)) {

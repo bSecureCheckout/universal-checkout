@@ -249,6 +249,8 @@ window.addEventListener("message", (event) => {
         event.origin == "https://order.bsecure.pk" ||
         event.origin == "https://login-dev.bsecure.app" ||
         event.origin == "https://login-stage.bsecure.app" ||
+        event.origin == "https://order-stage-v2.bsecure.app" ||
+        event.origin == "https://order-dev-v2.bsecure.app" ||
         event.origin == "https://login.bsecure.pk" ) {
         //console.log('event.origin In:', event.origin, 'event.data:', event.data);
             bsecureWindow.close();

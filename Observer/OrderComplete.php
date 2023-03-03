@@ -74,5 +74,7 @@ class OrderComplete implements \Magento\Framework\Event\ObserverInterface
             $this->httpResponse->setRedirect($bsecureOrderCheckoutUrl);
             return;
         }
+
+        return true;
     }
 }

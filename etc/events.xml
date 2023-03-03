@@ -9,6 +9,7 @@
      <event name="payment_method_is_active">  
      	<observer name="restrict_payment_methods" instance="Bsecure\UniversalCheckout\Observer\RestrictPaymentMethods" />  
      </event>
+
      <event name="admin_system_config_changed_section_universalcheckout">
         <observer name="custom_admin_system_config_changed_section_universalcheckout" instance="Bsecure\UniversalCheckout\Observer\ConfigObserver"/>
     </event>

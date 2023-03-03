@@ -12,7 +12,7 @@ use Magento\User\Model\ResourceModel\User\CollectionFactory as UserCollectionFac
 class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
     const PLUGIN_NAME = 'Magento';
-    const PLUGIN_VERSION = '2.0.2';
+    const PLUGIN_VERSION = '2.0.3';
     const BTN_SHOW_BSECURE_ONLY = 'bsecure_only';
     const BTN_SHOW_BSECURE_BOTH = 'bsecure_mag_both';
     const BTN_BUY_WITH_BSECURE = 'Bsecure_UniversalCheckout::images/bsecure-checkout-img.svg';

@@ -111,9 +111,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
      *
      */
     public function createMagentoOrder($orderData)
-    {
-        //var_dump($orderData); die;
-        
+    {                
         $bsecureOrderRef  = $orderData->order_ref;
         $placementStatus   = $orderData->placement_status;
         $paymentStatus     = $orderData->payment_status;
@@ -482,7 +480,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         if (!empty($paymentMethod->name)) {
             $orderNotes = "Payment Method: ".$paymentMethod->name;
 
-            if (!empty($cardDetails)) {
+            if (!empty($cardDetails->card_name) && !empty($cardDetails->card_type)) {
                 $orderNotes = "Card Type: ".$cardDetails->card_type.'<br>';
                 $orderNotes .= "Card Holder Name: ".$cardDetails->card_name.'<br>';
                 $orderNotes .= "Card Number: ".$cardDetails->card_number.'<br>';
@@ -499,8 +497,9 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $increment_id = $order->getRealOrderId();
 
         if ($order->getEntityId()) {
-
+            
             $this->_clearQuote();
+            $this->setOrderTotalPaid($order,$placementStatus,$paymentStatus);
             return $order->getEntityId();
 
         } else {
@@ -590,9 +589,10 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                 break;
             case 3:
                 $orderStatus = \Magento\Sales\Model\Order::STATE_PROCESSING;
-                /*if ($paymentStatus == 1) {
+                #Mark order as complete if it is placed on bSecure and its payment has beeen received else mark is as processing [Robo coll/COD/DBT Usecase] 
+                if ($paymentStatus == 1) {
                     $orderStatus = \Magento\Sales\Model\Order::STATE_COMPLETE;
-                }*/
+                }
                 break;
             case 4:
                 $orderStatus = \Magento\Sales\Model\Order::STATE_HOLDED;
@@ -1446,6 +1446,7 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $order->setData('bsecure_order_type', strtolower($orderData->order_type));
         $order->setData('bsecure_order_id', $orderData->merchant_order_id);
         $this->_clearQuote();
+        $this->setOrderTotalPaid($order,$placementStatus,$paymentStatus);
 
         return $order->getEntityId();
     }
@@ -1456,5 +1457,15 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $this->cart->truncate();
         $this->cart->getQuote()->setTotalsCollectedFlag(false);
         $this->cart->save();
+    }
+
+    //Update Order Total Paid
+    public function setOrderTotalPaid($order,$placementStatus,$paymentStatus){
+        if(!empty($order)){
+            if($placementStatus == 3 && $paymentStatus == 1){
+                $order->setTotalPaid($order->getGrandTotal()); 
+                $order->save();
+            }
+        }       
     }
 }
