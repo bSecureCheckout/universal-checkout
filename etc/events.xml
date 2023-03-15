@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
     <event name="sales_order_place_after">
-        <observer name="order_id_sales_after" instance="Bsecure\UniversalCheckout\Observer\BeforeOrderComplete" />
+        <observer name="order_id_sales_after" instance="Bsecure\UniversalCheckout\Observer\BeforeOrderComplete" />        
     </event>
     <event name="checkout_onepage_controller_success_action">
         <observer name="bsecure_universalcheckout_observer_ordersaveafter" instance="Bsecure\UniversalCheckout\Observer\OrderComplete" />
@@ -13,4 +13,5 @@
      <event name="admin_system_config_changed_section_universalcheckout">
         <observer name="custom_admin_system_config_changed_section_universalcheckout" instance="Bsecure\UniversalCheckout\Observer\ConfigObserver"/>
     </event>
+    
 </config>

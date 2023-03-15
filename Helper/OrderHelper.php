@@ -486,6 +486,10 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                 $orderNotes .= "Card Number: ".$cardDetails->card_number.'<br>';
                 $orderNotes .= "Card Expire: ".$cardDetails->card_expire;
             }
+            if(!empty($paymentMethod->transaction_id)){
+                $orderNotes .= "<br>Transaction ID: ".$paymentMethod->transaction_id;
+            }
+            
 
             $order->addStatusHistoryComment($orderNotes)
             ->setIsCustomerNotified(false)
@@ -573,36 +577,56 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
 
         return $nameType == 'last_name' ? trim($lastName) : trim($firstName);
     }
+/*"order_status": {
 
+        'created'       => 1,
+
+        'initiated'     => 2,
+
+        'placed'        => 3,
+
+        'awaiting-confirmation' => 4,
+
+        'canceled' => 5,
+
+        'expired' => 6,
+
+        'failed' => 7
+
+        'awaiting-payment' => 8
+
+        }*/
     /*
     * Map bSecure statuses with magento default statuses
     */
     public function magentoOrderStatus($placementStatus, $paymentStatus = 0)
     {
-        $orderStatus = \Magento\Sales\Model\Order::STATE_PROCESSING;
-        $placementStatus = (int) $placementStatus;
+        $placementStatus = (int) $placementStatus;        
 
         switch ($placementStatus) {
-            case 1:
-            case 2:
+            case 1: // created
+            case 2: // initiated
                 $orderStatus = 'bsecure_draft';
                 break;
-            case 3:
-                $orderStatus = \Magento\Sales\Model\Order::STATE_PROCESSING;
+            case 3: // placed
+
+                $orderStatus =  \Magento\Sales\Model\Order::STATE_PROCESSING;
                 #Mark order as complete if it is placed on bSecure and its payment has beeen received else mark is as processing [Robo coll/COD/DBT Usecase] 
-                if ($paymentStatus == 1) {
-                    $orderStatus = \Magento\Sales\Model\Order::STATE_COMPLETE;
-                }
+
+                //if ($paymentStatus == 1) { 
+                    // Commented as discussed on 03-06-23
+                    //$orderStatus = \Magento\Sales\Model\Order::STATE_COMPLETE;
+                //}
                 break;
-            case 4:
+            case 4: // awaiting-confirmation
                 $orderStatus = \Magento\Sales\Model\Order::STATE_HOLDED;
                 break;
-            case 5:
-            case 6:
-            case 7:
+            case 5: // canceled
+            case 6: // expired
+            case 7: // failed
                 $orderStatus = \Magento\Sales\Model\Order::STATE_CANCELED;
                 break;
-            case 8:
+            case 8: // awaiting-payment
                 $orderStatus = \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT;
                 break;
             default:
@@ -795,13 +819,13 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @return array server response .
      */
-    public function bsecureCreateOrder($accessToken)
+    public function bsecureCreateOrder($accessToken = '')
     {
-        if (!$accessToken) {
+        /*if (!$accessToken) {
             throw new \Magento\Framework\Exception\AlreadyExistsException(
                 __("Access token not found while sending request at bSecure server")
             );
-        }
+        }*/
 
         $cartData = $this->getCartData();
 
@@ -821,7 +845,8 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
         $config = $this->bsecureHelper->getBsecureConfig();
         $orderCreateEndpoint = !empty($config->orderCreate) ? $config->orderCreate : "";
 
-        $headers =  ['Authorization' => 'Bearer ' . $accessToken];
+        $headers =    $this->bsecureHelper->getApiHeaders('',false);
+        //$headers =  ['Authorization' => 'Bearer ' . $accessToken];
 
         $params =   [
                         'method' => 'POST',
@@ -831,6 +856,8 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                     ];
                 
         $response = $this->bsecureHelper->bsecureSendCurlRequest($orderCreateEndpoint, $params);
+
+        $this->bsecureHelper->updateBtnUrlsFromBsecure($response);
 
         return $response;
     }
@@ -1433,6 +1460,9 @@ class OrderHelper extends \Magento\Framework\App\Helper\AbstractHelper
                 $orderNotes .= "Card Holder Name: " . $cardDetails->card_name . '<br>';
                 $orderNotes .= "Card Number: " . $cardDetails->card_number . '<br>';
                 $orderNotes .= "Card Expire: " . $cardDetails->card_expire;
+            }
+            if(!empty($orderData->payment_method->transaction_id)){
+                $orderNotes .= "<br>Transaction ID: ".$orderData->payment_method->transaction_id;
             }
 
             $order->addStatusHistoryComment($orderNotes)

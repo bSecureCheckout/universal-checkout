@@ -54,81 +54,70 @@ class Checkout extends \Magento\Framework\App\Action\Action
     */
     public function manageMagentoOrder($bsecureOrderRef)
     {
-        
-        $response = $this->bsecureHelper->bsecureGetOauthToken();
-        
-        $validateResponse = $this->bsecureHelper->validateResponse($response, 'token_request');
+
+        $headers =    $this->bsecureHelper->getApiHeaders('',false);
+        //$headers =    ['Authorization' => 'Bearer ' . $this->accessToken];
+
+        $requestData['order_ref'] = $bsecureOrderRef;
+
+        $params =     [
+                        'method' => 'POST',
+                        'body' => $requestData,
+                        'headers' => $headers,
+                    ];
+
+        $config = $this->bsecureHelper->getBsecureConfig();
+
+        $this->orderStatusEndpoint = !empty($config->orderStatus) ? $config->orderStatus : "";
+
+        $response = $this->bsecureHelper->bsecureSendCurlRequest($this->orderStatusEndpoint, $params);
+
+        $validateResponse = $this->bsecureHelper->validateResponse($response);
 
         if ($validateResponse['error']) {
             return $this->getResponse()->setBody(__('Response Error: ' . $validateResponse['msg']));
         } else {
-            // Get Order //
-            // @codingStandardsIgnoreStart
-            $this->accessToken = $response->access_token;
-            // @codingStandardsIgnoreEnd
+            $orderData = $response->body;
+            
+            $validateOrderData = $this->orderHelper->validateOrderData($orderData);
 
-            $headers =    ['Authorization' => 'Bearer ' . $this->accessToken];
-
-            $requestData['order_ref'] = $bsecureOrderRef;
-
-            $params =     [
-                            'method' => 'POST',
-                            'body' => $requestData,
-                            'headers' => $headers,
-                        ];
-
-            $config = $this->bsecureHelper->getBsecureConfig();
-
-            $this->orderStatusEndpoint = !empty($config->orderStatus) ? $config->orderStatus : "";
-
-            $response = $this->bsecureHelper->bsecureSendCurlRequest($this->orderStatusEndpoint, $params);
-
-            $validateResponse = $this->bsecureHelper->validateResponse($response);
-
-            if ($validateResponse['error']) {
-                return $this->getResponse()->setBody(__('Response Error: ' . $validateResponse['msg']));
+            if (!empty($validateOrderData['status'])) {
+                return $this->getResponse()->setBody(__('Error: ' . $validateOrderData['msg']));
             } else {
-                $orderData = $response->body;
-                
-                $validateOrderData = $this->orderHelper->validateOrderData($orderData);
-
-                if (!empty($validateOrderData['status'])) {
-                    return $this->getResponse()->setBody(__('Error: ' . $validateOrderData['msg']));
-                } else {
-                    if (!empty($orderData->placement_status)) {
-                        if ($orderData->placement_status == 2 || $orderData->placement_status == 1) {
-                            $this->messageManager->addError(__("Sorry! Your order has not been proccessed."));
-                            $this->_redirect('checkout/cart');
-                        }
-                    }
-
-                    $orderId = $this->orderHelper->createMagentoOrder($orderData);
-
-                    if (!empty($orderId)) {
-                        $order = $this->orderRepository->get($orderId);
-                        $quoteId = $order->getQuoteId();
-                        $getRealOrderId = $order->getRealOrderId();
-                        
-                        $this->session->setLastSuccessQuoteId($quoteId);
-                        $this->session->setLastQuoteId($quoteId);
-                        $this->session->setLastOrderId($orderId); //123
-                        $this->session->setLastRealOrderId($getRealOrderId); // 000000123
-
-                        $this->_clearQuote();
-
-                        if ($order->getStatus() == \Magento\Sales\Model\Order::STATE_CANCELED) {
-                            $this->messageManager->addError(__("Sorry! Your order has been " . $order->getStatus()));
-                            $this->_redirect('checkout/cart');
-                        }
-
-                        $this->_redirect('checkout/onepage/success');
-                    } else {
-                        $this->messageManager->addError(__("Unable to create order at this moment please try again."));
+                if (!empty($orderData->placement_status)) {
+                    if ($orderData->placement_status == 2 || $orderData->placement_status == 1) {
+                        $this->messageManager->addError(__("Sorry! Your order has not been proccessed."));
                         $this->_redirect('checkout/cart');
                     }
                 }
+
+                $orderId = $this->orderHelper->createMagentoOrder($orderData);
+
+                if (!empty($orderId)) {
+                    $order = $this->orderRepository->get($orderId);
+                    $quoteId = $order->getQuoteId();
+                    $getRealOrderId = $order->getRealOrderId();
+                    
+                    $this->session->setLastSuccessQuoteId($quoteId);
+                    $this->session->setLastQuoteId($quoteId);
+                    $this->session->setLastOrderId($orderId); //123
+                    $this->session->setLastRealOrderId($getRealOrderId); // 000000123
+
+                    $this->_clearQuote();
+
+                    if ($order->getStatus() == \Magento\Sales\Model\Order::STATE_CANCELED) {
+                        $this->messageManager->addError(__("Sorry! Your order has been " . $order->getStatus()));
+                        $this->_redirect('checkout/cart');
+                    }
+
+                    $this->_redirect('checkout/onepage/success');
+                } else {
+                    $this->messageManager->addError(__("Unable to create order at this moment please try again."));
+                    $this->_redirect('checkout/cart');
+                }
             }
         }
+        
     }
 
     // Clear Cart //

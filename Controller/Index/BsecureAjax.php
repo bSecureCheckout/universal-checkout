@@ -38,46 +38,35 @@ class BsecureAjax extends \Magento\Framework\App\Action\Action
             $action = filter_var($this->request->getParam('action'), FILTER_SANITIZE_SPECIAL_CHARS);
 
             if ($action == 'bsecure_send') {
-                $config = $this->bsecureHelper->getBsecureConfig();
+                
+                $response = $this->_orderHelper->bsecureCreateOrder();
 
-                $response = $this->bsecureHelper->bsecureGetOauthToken();
-
-                $validateResponse = $this->bsecureHelper->validateResponse($response, 'token_request');
+                $validateResponse = $this->bsecureHelper->validateResponse($response);
 
                 if ($validateResponse['error']) {
                     $returnRersult = ['status' => false, 'msg' => $validateResponse['msg']];
                 } else {
-                    // @codingStandardsIgnoreStart
-                    $this->accessToken = $response->access_token;
-                    // @codingStandardsIgnoreEnd
-                    $response = $this->_orderHelper->bsecureCreateOrder($this->accessToken);
-
-                    $validateResponse = $this->bsecureHelper->validateResponse($response);
-
-                    if ($validateResponse['error']) {
-                        $returnRersult = ['status' => false, 'msg' => $validateResponse['msg']];
+                    if (!empty($response->body->order_reference)) {
+                        $redirect = !empty($response->body->checkout_url) ? $response->body->checkout_url : "";
+                        $returnRersult = [
+                            'status' => true,
+                            'msg' => __("Request Success"),
+                            'redirect' => $redirect];
                     } else {
-                        if (!empty($response->body->order_reference)) {
-                            $redirect = !empty($response->body->checkout_url) ? $response->body->checkout_url : "";
-                            $returnRersult = [
-                                'status' => true,
-                                'msg' => __("Request Success"),
-                                'redirect' => $redirect];
-                        } else {
-                            $completeResponse =  __("No response from bSecure server, 
-                            order_reference field not found."); //phpcs:ignore
-                            
-                            $errorMsg = !empty($response->message) ?
-                                        implode(',', $response->message) :
-                                        $completeResponse;
-                            $returnRersult = [
-                                'status' => false,
-                                 'msg' => __("Your request to bSecure server failed.")
-                                 . '<br>' . ($errorMsg),
-                                 'redirect' => ''];
-                        }
+                        $completeResponse =  __("No response from bSecure server, 
+                        order_reference field not found."); //phpcs:ignore
+                        
+                        $errorMsg = !empty($response->message) ?
+                                    implode(',', $response->message) :
+                                    $completeResponse;
+                        $returnRersult = [
+                            'status' => false,
+                             'msg' => __("Your request to bSecure server failed.")
+                             . '<br>' . ($errorMsg),
+                             'redirect' => ''];
                     }
                 }
+                
             }
         }
 

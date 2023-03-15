@@ -86,7 +86,7 @@ class Sidebar extends Template
         $checkoutBtnUrl = !empty($checkoutBtnUrl) ? $checkoutBtnUrl . $queryString . 'v=' . random_int(0, 100000000) :
                           $this->assetRepo->getUrl($this->bsecureHelper::BTN_BUY_WITH_BSECURE);
 
-        if ($moduleEnabled) {
+        if ($moduleEnabled && $showCheckoutBtn != $this->bsecureHelper::BTN_SHOW_MAGENTO_ONLY) {
             $bsecureCheckoutBtn = '<a href="javascript:;" class="minicart-area bsecure-checkout-button">';
             $bsecureCheckoutBtn .= '<img data-role="proceed-to-checkout" title="' . $title . '"';
             $bsecureCheckoutBtn .= 'alt="' . $title . '" class="primary checkout"';
