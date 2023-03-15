@@ -12,9 +12,10 @@ use Magento\User\Model\ResourceModel\User\CollectionFactory as UserCollectionFac
 class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
     const PLUGIN_NAME = 'Magento';
-    const PLUGIN_VERSION = '2.0.3';
+    const PLUGIN_VERSION = '2.0.5';
     const BTN_SHOW_BSECURE_ONLY = 'bsecure_only';
     const BTN_SHOW_BSECURE_BOTH = 'bsecure_mag_both';
+    const BTN_SHOW_MAGENTO_ONLY = 'bsecure_mag_only';
     const BTN_BUY_WITH_BSECURE = 'Bsecure_UniversalCheckout::images/bsecure-checkout-img.svg';
     const BSECURE_DEV_VIEW_ORDER_URL = 'https://partners-dev.bsecure.app/view-order/';
     const BSECURE_STAGE_VIEW_ORDER_URL = 'https://partners-stage.bsecure.app/view-order/';
@@ -161,6 +162,32 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         return $response;
+    }
+
+    /**
+     * Get headers to send request at bSecure
+     *
+     * @return array headers
+     */
+    public function getApiHeaders($accessToken, $isToken = true){
+
+        $clientId      = $this->getConfig('universalcheckout/general/bsecure_client_id');
+        $clientSecret  = $this->getConfig('universalcheckout/general/bsecure_client_secret');
+        $bsecureStoreId = $this->getConfig('universalcheckout/general/bsecure_store_id');
+        $clientId       = !empty($bsecureStoreId) ? $clientId . ':' . $bsecureStoreId : $clientId;
+
+        $headers =  ['Authorization' => 'Bearer '.$accessToken];
+        
+
+        if(!$isToken){
+
+            $headers =  [
+                            'x-client-id' => base64_encode($clientId),
+                            'x-client-token' => base64_encode($clientSecret),
+                        ];
+        }
+        
+        return $headers;
     }
 
     /**
@@ -472,5 +499,18 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 
         $this->logger->debug("-------------unstallNotification-----------");
         $this->sendNotificationToBsecure($notifyData);
+    }
+
+    public function updateBtnUrlsFromBsecure($response){
+
+        if (!empty($response->body)) {
+            if (!empty($response->body->checkout_btn)) {
+                $this->setConfig(
+                    'universalcheckout/general/bsecure_checkout_btn_url',
+                    $response->body->checkout_btn
+                );
+            }            
+        }
+       
     }
 }

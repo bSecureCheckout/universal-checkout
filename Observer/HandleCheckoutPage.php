@@ -30,7 +30,7 @@ class HandleCheckoutPage implements \Magento\Framework\Event\ObserverInterface
 
         if ($moduleEnabled
             && $this->cartHelper->getItemsCount() > 0
-            && $showCheckoutBtn != $this->bsecureHelper::BTN_SHOW_BSECURE_BOTH) { //phpcs:ignore
+            && $showCheckoutBtn == $this->bsecureHelper::BTN_SHOW_BSECURE_ONLY) { //phpcs:ignore
             $this->handleCheckoutPage($observer);
         }
         
@@ -43,45 +43,33 @@ class HandleCheckoutPage implements \Magento\Framework\Event\ObserverInterface
     public function handleCheckoutPage($observer)
     {
 
-        $response = $this->bsecureHelper->bsecureGetOauthToken();
-        $controller = $observer->getControllerAction();
+        $controller = $observer->getControllerAction();        
+        
+        $response = $this->orderHelper->bsecureCreateOrder();
 
-        $validateResponse = $this->bsecureHelper->validateResponse($response, 'token_request');
+        $validateResponse = $this->bsecureHelper->validateResponse($response);
 
         if ($validateResponse['error']) {
             $this->messageManager->addError(__('Response Error: ' . $validateResponse['msg']));
             $this->redirect->redirect($controller->getResponse(), 'checkout/cart');
         } else {
-            // @codingStandardsIgnoreStart
-            // Create Order //
-            $accessToken = $response->access_token;
-            // @codingStandardsIgnoreEnd
+            if (!empty($response->body->order_reference)) {
+                $redirect = !empty($response->body->checkout_url) ?
+                            $response->body->checkout_url :
+                            $this->url->getUrl('checkout/cart');//phpcs:ignore
 
-            $response = $this->orderHelper->bsecureCreateOrder($accessToken);
-
-            $validateResponse = $this->bsecureHelper->validateResponse($response);
-
-            if ($validateResponse['error']) {
-                $this->messageManager->addError(__('Response Error: ' . $validateResponse['msg']));
-                $this->redirect->redirect($controller->getResponse(), 'checkout/cart');
+                // Redirect to bSecure Server
+                $this->redirect->redirect($controller->getResponse(), $redirect);
             } else {
-                if (!empty($response->body->order_reference)) {
-                    $redirect = !empty($response->body->checkout_url) ?
-                                $response->body->checkout_url :
-                                $this->url->getUrl('checkout/cart');//phpcs:ignore
-
-                    // Redirect to bSecure Server
-                    $this->redirect->redirect($controller->getResponse(), $redirect);
-                } else {
-                    $completeResponse =  __("No response from bSecure server, order_reference field not found.");
-                    $errorMsg = !empty($response->message) ?
-                    implode(',', $response->message) :
-                    $completeResponse;//phpcs:ignore
-                    $msg = __("Your request to bSecure server failed.");
-                    $this->messageManager->addError($msg.' '.($errorMsg));//phpcs:ignore
-                    $this->redirect->redirect($controller->getResponse(), 'checkout/cart');
-                }
+                $completeResponse =  __("No response from bSecure server, order_reference field not found.");
+                $errorMsg = !empty($response->message) ?
+                implode(',', $response->message) :
+                $completeResponse;//phpcs:ignore
+                $msg = __("Your request to bSecure server failed.");
+                $this->messageManager->addError($msg.' '.($errorMsg));//phpcs:ignore
+                $this->redirect->redirect($controller->getResponse(), 'checkout/cart');
             }
         }
+        
     }
 }

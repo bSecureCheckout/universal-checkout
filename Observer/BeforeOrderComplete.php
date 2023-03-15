@@ -94,7 +94,7 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
                                     '_bsecure_order_checkout_url' => $response->checkout_url
                                     
                                 ];
-                        
+                                                
                         $newAdditionalData = !empty($additionalData) ?
                         array_merge($additionalData, $details) : $details;
                         $payment->setAdditionalInformation($newAdditionalData);
@@ -179,44 +179,35 @@ class BeforeOrderComplete implements \Magento\Framework\Event\ObserverInterface
 
     private function sendPaymentRequestBsecure($requestData)
     {
+        $headers =    $this->bsecureHelper->getApiHeaders('',false);
+        //$headers =  ['Authorization' => 'Bearer ' . $response->access_token];
+        $params =   [
+                        'method' => 'POST',
+                        'body' => $requestData,
+                        'headers' => $headers,
 
-        $response = $this->bsecureHelper->bsecureGetOauthToken();
-    
-        $validateResponse = $this->bsecureHelper->validateResponse($response, 'token_request');
+                    ];
+
+        $config =  $this->bsecureHelper->getBsecureConfig();
+        $createPaymentGatewayOrder = !empty($config->createPaymentGatewayOrder) ?
+                                     $config->createPaymentGatewayOrder : "";
+
+        $response = $this->bsecureHelper->bsecureSendCurlRequest($createPaymentGatewayOrder, $params);
+
+        $validateResponse = $this->bsecureHelper->validateResponse($response);
 
         if ($validateResponse['error']) {
+            
             throw new InputException(__($validateResponse['msg']));
             $this->messageManager->addErrorMessage($validateResponse['msg']);
             return false;
         } else {
-            $headers =  ['Authorization' => 'Bearer ' . $response->access_token];
-
-            $params =   [
-                            'method' => 'POST',
-                            'body' => $requestData,
-                            'headers' => $headers,
-
-                        ];
-
-            $config =  $this->bsecureHelper->getBsecureConfig();
-            $createPaymentGatewayOrder = !empty($config->createPaymentGatewayOrder) ?
-                                         $config->createPaymentGatewayOrder : "";
-
-            $response = $this->bsecureHelper->bsecureSendCurlRequest($createPaymentGatewayOrder, $params);
-
-            $validateResponse = $this->bsecureHelper->validateResponse($response);
-
-            if ($validateResponse['error']) {
-                //$this->checkoutSession->setErrorMessage($validateResponse['msg']);
-                throw new InputException(__($validateResponse['msg']));
-                $this->messageManager->addErrorMessage($validateResponse['msg']);
-                return false;
-            } else {
-                if (!empty($response->body)) {
-                    return $response->body;
-                }
+            if (!empty($response->body)) {
+                $this->bsecureHelper->updateBtnUrlsFromBsecure($response);
+                return $response->body;
             }
         }
+    
 
         return false;
     }

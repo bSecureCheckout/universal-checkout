@@ -46,7 +46,8 @@
                 <field id="bsecure_client_secret" translate="label" type="password" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>bSecure Client Secret</label>
                     <comment>You can find this client secret from bSecure portal. https://partner.bsecure.pk/integration-live</comment>
-                    </field>
+                </field>
+               
             </group>
              
         </section>

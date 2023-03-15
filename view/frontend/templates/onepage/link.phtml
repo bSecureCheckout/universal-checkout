@@ -45,7 +45,7 @@ if ($block->getOnePageLink()->isPossibleOnepageCheckout()):
                 ?>
 
         <?php
-    } else { ?>
+    } else {  ?>
         <?= $block->getLayout()->
                 createBlock($block->getOnePageLinkPath())
                 ->setTemplate("Magento_Checkout::onepage/link.phtml")

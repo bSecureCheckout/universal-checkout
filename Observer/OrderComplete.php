@@ -71,6 +71,7 @@ class OrderComplete implements \Magento\Framework\Event\ObserverInterface
 
             $payment->setAdditionalInformation($additionalData);
             $payment->save();
+            
             $this->httpResponse->setRedirect($bsecureOrderCheckoutUrl);
             return;
         }
